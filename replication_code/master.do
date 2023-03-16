@@ -1,8 +1,27 @@
 
- 
-/*----------------------------------------------------*/
-   /* [>   Set locals for analysis   <] */ 
-/*----------------------------------------------------*/
+cd "/Users/jonathanold/Library/CloudStorage/GoogleDrive-jonathan_old@berkeley.edu/My Drive/_Berkeley Research/Networks in Conflict/"
+cap mkdir ./regressions/
+cap mkdir ./progs/
+cap mkdir ./results/
+cap mkdir ./original_data/
+cap mkdir ./test/
+cap mkdir ./github/networks-in-conflict/replication_code
+cap mkdir ./replication_outputs
+cap mkdir ./replication_outputs/tables
+cap mkdir ./replication_outputs/figures
+
+cd ./regressions/
+
+global code "../github/networks-in-conflict/replication_code"
+
+do ${code}/my_spatial_2sls_JDO.do
+do ${code}/reg2hdfespatial.do
+do ${code}/ols_spatial_HAC.do
+// cap ssc install acreg 
+// cap ssc install spatial_hac_iv
+
+
+
 
 local y                 "TotFight" 
 local x                 "TotFight_Enemy TotFight_Allied"
@@ -35,11 +54,6 @@ local ac2_syntax        "latitude(latitude) longitude(longitude) id(group) time(
 
 
 
-
- 
-/*----------------------------------------------------*/
-   /* [>   1.  Make exact replication table   <] */ 
-/*----------------------------------------------------*/
 
 use KRTZ_monadic_AF.dta, clear
 
@@ -412,6 +426,7 @@ note("\bottomrule")
 
 
 
+stop 
 /*----------------------------------------------------*/
    /* [>   Comment 1: There can be large differences depending on how one defines fixed effects   <] */ 
 /*----------------------------------------------------*/
