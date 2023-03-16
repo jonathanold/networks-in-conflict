@@ -1,21 +1,22 @@
 
-cd "/Users/jonathanold/Library/CloudStorage/GoogleDrive-jonathan_old@berkeley.edu/My Drive/_Berkeley Coursework/Y2-2/Political Economy/Replication/Networks in Conflict/"
+cd "/Users/jonathanold/Library/CloudStorage/GoogleDrive-jonathan_old@berkeley.edu/My Drive/_Berkeley Research/Networks in Conflict/"
 cap mkdir ./regressions/
 cap mkdir ./progs/
 cap mkdir ./results/
 cap mkdir ./original_data/
 cap mkdir ./test/
+cap mkdir ./github/networks-in-conflict/replication_code
 cap mkdir ./replication_outputs
 cap mkdir ./replication_outputs/tables
 cap mkdir ./replication_outputs/figures
 
 cd ./regressions/
 
+global code "../github/networks-in-conflict/replication_code"
 
-
-do  ../replication_code/my_spatial_2sls_JDO.do
-do ../replication_code/reg2hdfespatial.do
-do ../replication_code/ols_spatial_HAC.do
+do ${code}/my_spatial_2sls_JDO.do
+do ${code}/reg2hdfespatial.do
+do ${code}/ols_spatial_HAC.do
 // cap ssc install acreg 
 // cap ssc install spatial_hac_iv
 
