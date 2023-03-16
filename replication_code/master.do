@@ -40,8 +40,10 @@ global github "../github/networks-in-conflict/"
 
 
 cd ${github}
+! git add replication_code/master.do
+! git commit -m "Update master file (from Stata)"
+! git push
 
- 
 /*----------------------------------------------------*/
    /* [>   2.  Initialize programs   <] */ 
 /*----------------------------------------------------*/
