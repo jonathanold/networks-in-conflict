@@ -1,3 +1,16 @@
+/*----------------------------------------------------*/
+   /* [>   0.  Github integration   <] */ 
+/*----------------------------------------------------*/
+/* [> Commit and push any important changes to github regularly. <] */ 
+/
+cd "${github}"
+! git add "${github}/replication_code/table1_comments.do"
+! git commit -m "Added comment about KP-F-statistic (which is slightly different if we drop singletons)."
+! git push
+*/
+ /* [> New branch for testing new code <] */
+ // git checkout -b name-of-branch
+
 
  
 /*----------------------------------------------------*/
@@ -41,6 +54,33 @@ local ac2_syntax        "latitude(latitude) longitude(longitude) id(group) time(
 use KRTZ_monadic_AF.dta, clear
 
 
+ 
+/*----------------------------------------------------*/
+   /* [>   Comment 3:  The KP-F-Statistic reported in the paper is wrong   <] */ 
+/*----------------------------------------------------*/
+/*
+The Kleibergen-Paap F-statistic reported by me is slightly different than the one reported in the paper.
+This is because I dropped singletons. If I instead estimate it as in the paper, I get back the original number of observations and also 
+        the same KP-F-statistic as reported in the paper. However, singletons should be dropped because they do not contribute to the
+        estimation, and so I report the KP-Fstatistic from my estimations instead.
+
+*/
+
+/* [> Original command <] */ 
+my_spatial_2sls_jo `y' `controls1' `controls2'  `fe2', `mys_syntax_iv'
+
+
+/* [> Drop singletons in controls2 <]  */
+foreach v of varlist `controls2' {
+       drop if `v'==1
+        }
+*/ 
+
+/* [> Command used for repliacation <] */ 
+my_spatial_2sls_jo `y' `controls1' `fe2', `mys_syntax_iv'
+
+
+
 /*----------------------------------------------------*/
    /* [>   Comment 1: There can be large differences depending on how one defines fixed effects   <] */ 
 /*----------------------------------------------------*/
@@ -82,7 +122,7 @@ Nevertheless, the description of column 3 works again.
 
 
 /*----------------------------------------------------*/
-   /* [>   2.  Log of changes in files   <] */ 
+   /* [>   XX.  Log of changes in files   <] */ 
 /*----------------------------------------------------*/
 
 * my_spatial_2sls_JDO.do: 
