@@ -2,8 +2,8 @@
    /* [>   0.  Github integration   <] */ 
 /*----------------------------------------------------*/
 /* [> Commit and push any important changes to github regularly. <] */ 
-/
-cd ${github}
+/*
+cd "${github}"
 ! git add "${github}/replication_code/table2.do"
 ! git commit -m "Started working on replication of Table 2. Problems found so far: Sample size restriction does not work because my2sl does not output e(sample)=."
 ! git push
@@ -11,7 +11,7 @@ cd ${github}
  /* [> New branch for testing new code <] */
  // git checkout -b name-of-branch
 
-
+cd "${main}/regressions"
  
 /*----------------------------------------------------*/
    /* [>   Set locals for analysis   <] */ 
@@ -48,11 +48,6 @@ local ac2_syntax        "latitude(latitude) longitude(longitude) id(group) time(
 
 
 
-do "${main}/progs/nw2sls.do"
-do "${main}/progs/nw2sls_partial.do"
-do "${main}/progs/my_spatial_2sls.do"
-
-do "${code}/my_spatial_2sls_JDO.do"
 
  
 /*----------------------------------------------------*/
@@ -64,16 +59,12 @@ This table generates first-stage results
 */
 use KRTZ_monadic_AF.dta, clear
 
-/* [> Drop singletons in controls2 <] */ 
+/* [> Drop singletons in controls2 <] */
 foreach v of varlist `controls2' {
        drop if `v'==1
         }
 
-
-
-
-
-
+*/
 
 
 
@@ -110,51 +101,82 @@ predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
         drop p
-estadd scalar KP = e(KPstat)
-estadd scalar HJ = e(pValueHansen)
+estadd scalar KP = `KPstat'
+estadd scalar HJ = `pValueHansen'
 est sto t2_c2
 
-
+drop e
 
 
 *Col 3 of Table 1
-use KRTZ_monadic_AF.dta, clear
-ivreg2 TotFight meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 $controlsFE TE* Dgroup* (TotFight_Enemy TotFight_Allied = rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1)
+qui ivreg2 TotFight meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 $controlsFE TE* Dgroup* (TotFight_Enemy TotFight_Allied = rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1)
 gen e=e(sample)
 
 qui my_spatial_2sls_jo `y' `controls1'  `controls3' `fe2', `mys_syntax_ivfull'
 local KPstat = e(KPstat)
 local pValueHansen = e(pValueHansen)
 
-my_spatial_2sls_jo TotFight_Enemy rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 $controlsFE TE* Dgroup*, end() iv( ) latitude(latitude) longitude(longitude) id(group) time(year) $lag_specif_ols  
+my_spatial_2sls_jo TotFight_Enemy rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 $controlsFE TE* Dgroup* if e==1, end() iv( ) latitude(latitude) longitude(longitude) id(group) time(year) $lag_specif_ols  
 predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
         drop p
-estadd scalar KP = e(KPstat)
-estadd scalar HJ = e(pValueHansen)
+estadd scalar KP = `KPstat'
+estadd scalar HJ = `pValueHansen'
 est sto t2_c3
 
-my_spatial_2sls_jo TotFight_Allied rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 $controlsFE TE* Dgroup*, end() iv( ) latitude(latitude) longitude(longitude) id(group) time(year) $lag_specif_ols  
+my_spatial_2sls_jo TotFight_Allied rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 $controlsFE TE* Dgroup* if e==1, end() iv( ) latitude(latitude) longitude(longitude) id(group) time(year) $lag_specif_ols  
 predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
         drop p
-estadd scalar KP = e(KPstat)
-estadd scalar HJ = e(pValueHansen)
+estadd scalar KP = `KPstat'
+estadd scalar HJ = `pValueHansen'
 est sto t2_c4
 
+drop e
 
 
 
 
 
+*Col 4 of Table 1
+qui ivreg2 TotFight meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 $controlsFE TE* Dgroup* (TotFight_Enemy TotFight_Allied TotFight_Neutral = rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 rain_neutral0 sqrain_neutral0 rain_neutral1 sqrain_neutral1)
+gen e=e(sample)
+
+qui my_spatial_2sls_jo `y' `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral'
+local KPstat = e(KPstat)
+local pValueHansen = e(pValueHansen)
+
+my_spatial_2sls_jo TotFight_Enemy rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 rain_neutral0 sqrain_neutral0 rain_neutral1 sqrain_neutral1 meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 Dgroup* $controlsFE if e==1, end() iv( ) latitude(latitude) longitude(longitude) id(group) time(year) $lag_specif_ols 
+predict p, xb
+        corr `y' p  
+        estadd scalar r2 = r(rho)^2
+        drop p
+estadd scalar KP = `KPstat'
+estadd scalar HJ = `pValueHansen'
+est sto t2_c5
+
+my_spatial_2sls_jo TotFight_Allied rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 rain_neutral0 sqrain_neutral0 rain_neutral1 sqrain_neutral1 meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 Dgroup* $controlsFE if e==1, end() iv( ) latitude(latitude) longitude(longitude) id(group) time(year) $lag_specif_ols 
+predict p, xb
+        corr `y' p  
+        estadd scalar r2 = r(rho)^2
+        drop p
+estadd scalar KP = `KPstat'
+estadd scalar HJ = `pValueHansen'
+est sto t2_c6
+
+drop e
+
+
+// perl -pi -e 's{(\bRain \(t-1\) All\.\s*&\s*)([^\s&]+)\s*&\s*([^\s&]+)\s*&\s*([^\s&]+)(\s*&|\s*\\\\)}
+ //          {$1\\textbf{$2} & $3 & \textbf{$4}$5}g'  /Users/jonathanold/Library/CloudStorage/GoogleDrive-jonathan_old@berkeley.edu/My\ Drive/_Berkeley\ Research/Networks\ in\ Conflict/replication_outputs/tables/t2.tex
 
 
 
 #delimit ;
 estout 
-t2_c1 t2_c2 t2_c3 t2_c4 t2_c1 t2_c2
+t2_c1 t2_c2 t2_c3 t2_c4 t2_c5 t2_c6
 using "../replication_outputs/tables/t2.tex" , style(tex) 
 eqlabels(" " " ") 
 wrap varwidth(45) 
@@ -166,7 +188,7 @@ order(`iv_reduced'  rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0)
  hlinechar("{hline @1}")
 stats(KP HJ N r2   ,
                 fmt(%9.2fc %9.2fc %9.0fc %9.3fc)
-                labels("\midrule \addlinespace Kleibergen-Paap F-stat" "Hansen J" "Observations" "R-squared"))
+                labels("\midrule \addlinespace Kleibergen-Paap F-stat" "Hansen J (p-value)" "Observations" "R-squared"))
 starlevels(* 0.1 ** 0.05 *** 0.01) 
 nolabel replace collabels(none) mlabels(none)
 note("\bottomrule")
@@ -175,25 +197,23 @@ note("\bottomrule")
 
 
 
+import delim "../replication_outputs/tables/t2.tex", delim("&") clear
 
-stop
+replace v2 = " \cellcolor{black!15} \textbf{"+v2+"}" if _n==1 | _n==2
+replace v3 = " \cellcolor{black!15} \textbf{"+v3+"}" if _n==5 | _n==6 
+
+replace v4 = " \cellcolor{black!15} \textbf{"+v4+"}" if _n==1 | _n==2 | _n==9 | _n==10
+replace v5 = " \cellcolor{black!15} \textbf{"+v5+"}" if _n==5 | _n==6 | _n==13 | _n==14
+replace v6 = " \cellcolor{black!15} \textbf{"+v6+"}" if _n==1 | _n==2 | _n==9 | _n==10
+replace v7 = " \cellcolor{black!15} \textbf{"+v7+"}" if _n==5 | _n==6 | _n==13 | _n==14
+
+replace v7 = subinstr(v7,"\\}", "}\\",1)
+
+export delim "../replication_outputs/tables/t2.tex", delim("&") novarnames replace
 
 
 
-*Col 4 of Table 1
-use KRTZ_monadic_AF.dta, clear
-cap drop e
-my_spatial_2sls TotFight meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 Dgroup* $controlsFE, end(TotFight_Enemy TotFight_Allied TotFight_Neutral) iv(rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 rain_neutral0 sqrain_neutral0 rain_neutral1 sqrain_neutral1) latitude(latitude) longitude(longitude) id(group) time(year) $lag_specif 
-gen e=e(sample)
-keep if e~=.
-eststo: my_spatial_2sls TotFight_Enemy rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 rain_neutral0 sqrain_neutral0 rain_neutral1 sqrain_neutral1 meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 Dgroup* $controlsFE, end() iv( ) latitude(latitude) longitude(longitude) id(group) time(year) $lag_specif_ols  
-eststo: my_spatial_2sls TotFight_Allied rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 rain_neutral0 sqrain_neutral0 rain_neutral1 sqrain_neutral1 meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 Dgroup* $controlsFE, end() iv( ) latitude(latitude) longitude(longitude) id(group) time(year) $lag_specif_ols  
 
-log using ../results/Table2.txt, text replace
-set linesize 150
-esttab, keep(rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 meanc_rain0 sqmeanc_rain0 meanc_rain1 sqmeanc_rain1 rain_neutral0 sqrain_neutral0 rain_neutral1 sqrain_neutral1) pr2 r2 starlevels(* 0.1 ** 0.05 *** 0.01)  b(%4.3f) se(%4.3f) label scalars(meanprob) nogaps nolines nodepvars
-log close
-eststo clear
 
 
 
