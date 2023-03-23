@@ -5,7 +5,7 @@
 */*
 cd "${github}"
 ! git add "${github}/replication_code/table3.do"
-! git commit -m "Improved code to replicate table 3. Cols 1-3 are complete and understood. Need to understand cols 4-7."
+! git commit -m "Slightly improved code to replicate table 3 (tempfiles code). Cols 1-3 are complete and understood. Need to understand cols 4-7."
 ! git push
 */
 
@@ -54,7 +54,12 @@ global active_window_extended "((year > startyear -4) & (year < endyear+4))"
 global window_of_activity "keep if ${active_window}"
 global window_of_activity_extended "keep if ${active_window_extended}"
 
- 
+* tempfiles
+tempfile temp_active 
+tempfile temp_window
+tempfile temp_time_varying_network
+tempfile temp_active_d 
+
 /*----------------------------------------------------*/
    /* [>   Preparation: Generate time-varying data  <] */ 
 /*----------------------------------------------------*/
@@ -72,7 +77,6 @@ replace group_start= . if id==49 & militia_start!=.
 replace group_end= . if id==49 & militia_end!=.
 sort id 
 
-tempfile temp_window
 save `temp_window', replace 
 
  
@@ -108,7 +112,7 @@ forv num=1/85 {
    /* [>   Column 1:  Balanced panel with expert coding windows of activity  <] */ 
 /*----------------------------------------------------*/
 my_spatial_2sls_jo `y' ActiveGroup* `controls1' `controls3' Dgroup*  , `mys_syntax_ivneutral' 
-stop
+
 predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
@@ -244,23 +248,24 @@ gen window_activity_expert=(year > start_fz -1) & (year < end_fz+1)
 sort id year
 
 sort group year
-tempfile temp_time_varying_network
 save `temp_time_varying_network', replace 
 *global window_of_activity "keep if year > startyear -1 & year < endyear+1"
 keep if window_activity_expert==1
 keep group year
 sort group year
 gen active=1
-save temp_active, replace
+save `temp_active', replace 
+
 rename group group_d
 sort group_d year
 rename active active_d 
-save temp_active_d, replace
+save `temp_active_d', replace
+
 * Unbalanced panel
 use KRTZ_dyadic_AF, clear
 keep group group_d year allied enemy
 sort group_d year
-merge group_d year using temp_active_d
+merge group_d year using `temp_active_d'
 tab _merge
 drop _merge 
 keep if active_d==1
@@ -343,7 +348,6 @@ gen nonzero=year if `y'>0
 bysort group: egen startyear= min(nonzero)
 bysort group: egen endyear= max(nonzero)
 sort group year
-tempfile temp_time_varying_network
 save `temp_time_varying_network', replace
 *global window_of_activity "keep if year > startyear -1 & year < endyear+1"
 $window_of_activity
@@ -351,16 +355,16 @@ $window_of_activity
 keep group year
 sort group year
 gen active=1
-save temp_active, replace
+save `temp_active', replace 
 rename group group_d
 sort group_d year
 rename active active_d 
-save temp_active_d, replace
+save `temp_active_d', replace 
 * Unbalanced panel
 use KRTZ_dyadic_AF, clear
 keep group group_d year allied enemy
 sort group_d year
-merge group_d year using temp_active_d
+merge group_d year using `temp_active_d'
 tab _merge
 drop _merge 
 keep if active_d==1
@@ -425,7 +429,6 @@ gen nonzero=year if `y'>0
 bysort group: egen startyear= min(nonzero)
 bysort group: egen endyear= max(nonzero)
 sort group year
-tempfile temp_time_varying_network
 save `temp_time_varying_network', replace
 *global window_of_activity "keep if year > startyear -1 & year < endyear+1"
 $window_of_activity_extended
@@ -433,16 +436,16 @@ $window_of_activity_extended
 keep group year
 sort group year
 gen active=1
-save temp_active, replace
+save `temp_active', replace 
 rename group group_d
 sort group_d year
 rename active active_d 
-save temp_active_d, replace
+save `temp_active_d', replace 
 * Unbalanced panel
 use KRTZ_dyadic_AF, clear
 keep group group_d year allied enemy
 sort group_d year
-merge group_d year using temp_active_d
+merge group_d year using `temp_active_d'
 tab _merge
 drop _merge 
 keep if active_d==1
@@ -543,10 +546,6 @@ nolabel replace collabels(none) mlabels(none)
 note("\bottomrule")
   ; 
 #delimit cr   
-
-cap erase temp_time_varying_network.dta
-cap erase temp_active.dta
-cap erase temp_active_d.dta
 
 
 
