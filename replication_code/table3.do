@@ -2,10 +2,10 @@
    /* [>   0.  Github integration   <] */ 
 /*----------------------------------------------------*/
 /* [> Commit and push any important changes to github regularly. <] */ 
-/*
+*/*
 cd "${github}"
 ! git add "${github}/replication_code/table3.do"
-! git commit -m "Added code to replicate table 3"
+! git commit -m "Improved code to replicate table 3. Cols 1-3 are complete and understood. Need to understand cols 4-7."
 ! git push
 */
 
@@ -47,43 +47,12 @@ local shi_syntax        "lat(latitude) lon(longitude) panelvar(group) timevar(ye
 local ac1_syntax        "latitude(latitude) longitude(longitude) id(group) time(year) spatial lag(1000000) dist(150)"
 local ac2_syntax        "latitude(latitude) longitude(longitude) id(group) time(year) spatial lag(1000000) dist(150)  pfe1(group) pfe2(year) dropsingletons"
 
-
-
-
- 
-/*----------------------------------------------------*/
-   /* [>   1.  Make exact replication table   <] */ 
-/*----------------------------------------------------*/
-/*
-This table generates first-stage results
-
-*/
-use KRTZ_monadic_AF.dta, clear
-/* [> Drop singletons in controls2 <] */
-foreach v of varlist `controls2' {
-       drop if `v'==1
-        }
-
-*/
-
-
-
-
-
-
 *globals
-global lag_specif "     lag(1000000) dist(150) lagdist(1000000) partial"
 global clus "r cl(id)" 
-global window_of_activity "keep if year > startyear -1 & year < endyear+1"
-global window_of_activity_extended "keep if year > startyear -4 & year < endyear+4"
 global active_window "((year > startyear -1) & (year < endyear+1))"
 global active_window_extended "((year > startyear -4) & (year < endyear+4))"
-global controlsFE  "govern_* foreign_* unpopular_*  D96_* D30_* D41_* D471_*"
-global IVBaseline "rain_enemies0 sqrain_enemies0 rain_allies0 sqrain_allies0 rain_enemies1 sqrain_enemies1 rain_allies1 sqrain_allies1 rain_enemies_enemies0 sqrain_enemies_enemies0 rain_enemies_of_allies0 sqrain_enemies_of_allies0 rain_enemies_enemies1 sqrain_enemies_enemies1 rain_enemies_of_allies1 sqrain_enemies_of_allies1 rain_neutral0 sqrain_neutral0 rain_neutral1 sqrain_neutral1"
-global controlBaseline "`controls1' `controls3' i.group"
-global ENDO "TotFight_Enemy TotFight_Allied TotFight_Neutral "
-
-
+global window_of_activity "keep if ${active_window}"
+global window_of_activity_extended "keep if ${active_window_extended}"
 
  
 /*----------------------------------------------------*/
@@ -122,7 +91,7 @@ drop _merge
 gen start_fz=max(militia_start, group_start)
 gen end_fz=min(militia_end, group_end)
 
-/* [> Set omega=0 <] */ 
+/* [> Generate active group dummies with omega=0 <] */ 
 gen window_activity_expert=(year > start_fz -1) & (year < end_fz+1)
 sort id year
 sort group year
@@ -135,21 +104,11 @@ forv num=1/85 {
 
 
 
- 
 /*----------------------------------------------------*/
-   /* [>   Column 1:    <] */ 
+   /* [>   Column 1:  Balanced panel with expert coding windows of activity  <] */ 
 /*----------------------------------------------------*/
-
-********************
-** Balanced Sample 
-********************
-
-****
-** Balanced panel with expert coding windows of activity
-****
-
-*regression
-my_spatial_2sls_jo `y' ActiveGroup*  `controls1' `controls3' Dgroup* , `mys_syntax_ivneutral' 
+my_spatial_2sls_jo `y' ActiveGroup* `controls1' `controls3' Dgroup*  , `mys_syntax_ivneutral' 
+stop
 predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
@@ -157,16 +116,15 @@ predict p, xb
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 
-
 est sto t3_c1
-
-
-
 
 *eststo: ivreg2 `y' (`x' `n'=`iv_full_neutral') ActiveGroup*  `controls1' `controls3' i.group, $clus first
 
+
+
+
 ****
-** Balanced panel with dummies " `y'>0 x Dgroup*"
+** (not in table) Balanced panel with dummies " `y'>0 x Dgroup*"
 ****
 
 use KRTZ_monadic_AF.dta, clear
@@ -179,27 +137,30 @@ bysort group: egen startyear= min(nonzero)
 bysort group: egen endyear= max(nonzero)
 gen active = (`y'>0)
 
-****
-** Balanced panel with dummies " ((year > startyear -1) & (year < endyear+1)) x Dgroup*"
-****
+/*----------------------------------------------------*/
+   /* [>   Column 2:  Balanced panel with dummies " ((year > startyear -1) & (year < endyear+1)) x Dgroup*" <] */ 
+/*----------------------------------------------------*/
 
 use KRTZ_monadic_AF.dta, clear
 /* [> Drop singletons in controls2 <] */
 foreach v of varlist `controls2' {
        drop if `v'==1
         }
+
+/* [> Generate active group dummies with omega=0, but different activity definition <] */ 
 gen nonzero=year if `y'>0
 bysort group: egen startyear= min(nonzero)
 bysort group: egen endyear= max(nonzero)
 gen active = $active_window
 
-foreach num of numlist 1 (1) 85 {
-*                display `num'
-                                cap gen ActiveGroup`num' = active * Dgroup`num'
+forv num=1/85 {
+        *  display `num'
+        cap gen ActiveGroup`num' = active * Dgroup`num'
         }
 
+
 *regression
-my_spatial_2sls_jo `y'  ActiveGroup*  `controls1' `controls3' Dgroup*  , `mys_syntax_ivneutral' 
+my_spatial_2sls_jo `y'  ActiveGroup*  `controls1' `controls3' Dgroup*  if active==1 , `mys_syntax_ivneutral' 
 *eststo: ivreg2 `y' (`x' `n'=`iv_full_neutral') ActiveGroup*  `controls1' `controls3' i.group, $clus first
 predict p, xb
         corr `y' p  
@@ -207,8 +168,6 @@ predict p, xb
         drop p
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
-
-
 est sto t3_c2
 
  
@@ -217,63 +176,56 @@ est sto t3_c2
 
 
 
-#delimit ;
-estout 
-t3_c1  t3_c2 t3_c1 t3_c1 t3_c1 t3_c1 t3_c1
-using "../replication_outputs/tables/t3.tex" , style(tex) 
-eqlabels(" " " ") 
-wrap varwidth(45) 
-varlabels(TotFight_Enemy "Enemies (TFE)" TotFight_Allied "Allies (TFA)" TotFight_Neutral "Neutra (TFN)")
-keep(`x' `n')
-order(`x' `n')
-        cells(b(star fmt(%9.3f)) se(par)) 
- hlinechar("{hline @1}")
-stats(KP HJ N r2   ,
-                fmt(%9.2fc %9.2fc %9.0fc %9.3fc)
-                labels("\midrule \addlinespace Kleibergen-Paap F-stat" "Hansen J (p-value)" "Observations" "R-squared"))
-starlevels(* 0.1 ** 0.05 *** 0.01) 
-nolabel replace collabels(none) mlabels(none)
-note("\bottomrule")
-  ; 
-#delimit cr   
-
-stop
-
-
-
-****
-** Balanced panel with dummies " ((year > startyear -4) & (year < endyear+4)) x Dgroup*"
-****
+/*----------------------------------------------------*/
+   /* [>   Column 3:  Balanced panel with dummies " ((year > startyear -4) & (year < endyear+4)) x Dgroup*" */ 
+/*----------------------------------------------------*/
 
 use KRTZ_monadic_AF.dta, clear
 /* [> Drop singletons in controls2 <] */
 foreach v of varlist `controls2' {
        drop if `v'==1
         }
+
+/* [> Generate active group dummies with omega=3. Same activity definition as in col 2. <] */ 
 gen nonzero=year if `y'>0
 bysort group: egen startyear= min(nonzero)
 bysort group: egen endyear= max(nonzero)
 gen active = $active_window_extended
 
-
-foreach num of numlist 1 (1) 85 {
-*                display `num'
-                                cap gen ActiveGroup`num' = active * Dgroup`num'
+forv num=1/85 {
+        * display `num'
+        cap gen ActiveGroup`num' = active * Dgroup`num'
         }
 
 
-
 *regression
-eststo: my_spatial_2sls `y'  ActiveGroup*  `controls1' `controls3' Dgroup*  , `mys_syntax_ivneutral' 
+my_spatial_2sls_jo `y'  ActiveGroup*  `controls1' `controls3' Dgroup*  , `mys_syntax_ivneutral' 
+predict p, xb
+        corr `y' p  
+        estadd scalar r2 = r(rho)^2
+        drop p
+estadd scalar KP = e(KPstat)
+estadd scalar HJ = e(pValueHansen)
+est sto t3_c3
+
+
 *eststo: ivreg2 `y' (`x' `n'=`iv_full_neutral') ActiveGroup*  `controls1' `controls3' i.group, $clus first
+
+
+
+
+
+
+
 
 ********************
 ** Unbalanced Sample 
 ********************
 
 
-*********
-** Only window_of_activity from expert coding (FZ)
+/*----------------------------------------------------*/
+   /* [>   Column 4:  Only using window of activity from expert coding (FZ) */ 
+/*----------------------------------------------------*/
 
 use KRTZ_monadic_AF.dta, clear
 /* [> Drop singletons in controls2 <] */
@@ -281,7 +233,7 @@ foreach v of varlist `controls2' {
        drop if `v'==1
         }
 sort id
-merge m:1 id using temp_window.dta
+merge m:1 id using `temp_window'
 tab _merge
 drop if _merge==2
 drop _merge
@@ -292,9 +244,9 @@ gen window_activity_expert=(year > start_fz -1) & (year < end_fz+1)
 sort id year
 
 sort group year
-save temp_time_varying_network.dta, replace
+tempfile temp_time_varying_network
+save `temp_time_varying_network', replace 
 *global window_of_activity "keep if year > startyear -1 & year < endyear+1"
-use temp_time_varying_network.dta, clear
 keep if window_activity_expert==1
 keep group year
 sort group year
@@ -315,11 +267,11 @@ keep if active_d==1
 sort  group year  group_d
 collapse (sum) degree_plus_time=allied degree_minus_time=enemy, by( group year)
 sort group year
-merge group year using temp_time_varying_network.dta
+merge group year using `temp_time_varying_network'
 tab _merge
 drop _merge 
 keep if window_activity_expert==1
-qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' Dgroup*  ,  partial(Dgroup*   `controls3')
+qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' Dgroup*  ,  partial(Dgroup*  `controls3')
 scalar beta  = abs(_b[ `y'_Allied])
 scalar gamma = abs(_b[ `y'_Enemy])
 
@@ -345,8 +297,22 @@ local step = `step' + 1
  }
 
 *regression:
-eststo: my_spatial_2sls `y' phistar  `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral' 
+my_spatial_2sls_jo `y' phistar  `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral' 
+predict p, xb
+        corr `y' p  
+        estadd scalar r2 = r(rho)^2
+        drop p
+estadd scalar KP = e(KPstat)
+estadd scalar HJ = e(pValueHansen)
+est sto t3_c4
+
+
 *eststo: ivreg2 `y' (`x' `n'=`iv_full_neutral') phistar  `controls1' `controls3' i.group, $clus first
+
+
+
+
+
 * We check below that 2SLS and Control Functions deliver the same results
 ivreg2 `y' phistar  `controls1' `controls3' i.group (`x' `n' = `iv_full_neutral'), r
 reg TotFight_Enemy  phistar  `controls1' `controls3' i.group `iv_full_neutral'
@@ -356,9 +322,16 @@ predict residA, resid
 reg TotFight_Neutral  phistar  `controls1' `controls3' i.group `iv_full_neutral'
 predict residN, resid
 
-*********
-** Only window_of_activity "keep if year > startyear -1 & year < endyear+1"
-** With or Without dummies " TotFight>0 x Dgroup* "
+
+
+
+
+/*----------------------------------------------------*/
+   /* [>   Column 5: 
+   Only window_of_activity "keep if year > startyear -1 & year < endyear+1"
+   With or Without dummies " TotFight>0 x Dgroup* " */ 
+/*----------------------------------------------------*/
+
 
 * We build a time varying network based on windows of activity
 use KRTZ_monadic_AF.dta, clear
@@ -370,9 +343,9 @@ gen nonzero=year if `y'>0
 bysort group: egen startyear= min(nonzero)
 bysort group: egen endyear= max(nonzero)
 sort group year
-save temp_time_varying_network.dta, replace
+tempfile temp_time_varying_network
+save `temp_time_varying_network', replace
 *global window_of_activity "keep if year > startyear -1 & year < endyear+1"
-use temp_time_varying_network.dta, clear
 $window_of_activity
 *keep if `y'>0
 keep group year
@@ -394,11 +367,11 @@ keep if active_d==1
 sort  group year  group_d
 collapse (sum) degree_plus_time=allied degree_minus_time=enemy, by( group year)
 sort group year
-merge group year using temp_time_varying_network.dta
+merge group year using `temp_time_varying_network'
 tab _merge
 drop _merge 
 $window_of_activity
-qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' i.group,  partial(Dgroup*   `controls3')
+qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' Dgroup*,  partial(Dgroup*   `controls3')
 scalar beta  = abs(_b[ TotFight_Allied])
 scalar gamma = abs(_b[ TotFight_Enemy])
 
@@ -412,7 +385,7 @@ gen GAM=1/(1 + beta * degree_plus_time - gamma * degree_minus_time)
 bysort year: egen AGG_GAM=sum(GAM)
 gen phistar= GAM * (1-(1/AGG_GAM)) * (1/AGG_GAM)
 
-qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  phistar  `controls1' `controls3' i.group,  partial(Dgroup*   `controls3')
+qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  phistar  `controls1' `controls3' Dgroup*,  partial(Dgroup*   `controls3')
 local prec= 0.5 * (((beta - abs(_b[ TotFight_Allied]))^2 + (gamma - abs(_b[ TotFight_Enemy]))^2)^0.5)
 
 scalar beta  = abs(_b[ TotFight_Allied])
@@ -424,12 +397,27 @@ local step = `step' + 1
  }
 
 *regression
-eststo: my_spatial_2sls `y' phistar  `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral' 
+my_spatial_2sls_jo `y' phistar  `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral' 
+
+predict p, xb
+        corr `y' p  
+        estadd scalar r2 = r(rho)^2
+        drop p
+estadd scalar KP = e(KPstat)
+estadd scalar HJ = e(pValueHansen)
+est sto t3_c5
+
 *eststo: ivreg2 `y' (`x' `n'=`iv_full_neutral') phistar  `controls1' `controls3' i.group, $clus first
 
-*********
-** Only window_of_activity_extended "keep if year > startyear -3 & year < endyear+3"
-** With or Without dummies " `y'>0 x Dgroup* "
+
+
+
+/*----------------------------------------------------*/
+   /* [>   Column 6: 
+   Only window_of_activity_extended "keep if year > startyear -3 & year < endyear+3"
+   With or Without dummies " `y'>0 x Dgroup* " */
+/*----------------------------------------------------*/
+
 
 * We build a time varying network based on windows of activity
 use KRTZ_monadic_AF.dta, clear
@@ -437,9 +425,9 @@ gen nonzero=year if `y'>0
 bysort group: egen startyear= min(nonzero)
 bysort group: egen endyear= max(nonzero)
 sort group year
-save temp_time_varying_network.dta, replace
+tempfile temp_time_varying_network
+save `temp_time_varying_network', replace
 *global window_of_activity "keep if year > startyear -1 & year < endyear+1"
-use temp_time_varying_network.dta, clear
 $window_of_activity_extended
 *keep if `y'>0
 keep group year
@@ -461,11 +449,11 @@ keep if active_d==1
 sort  group year  group_d
 collapse (sum) degree_plus_time=allied degree_minus_time=enemy, by( group year)
 sort group year
-merge group year using temp_time_varying_network.dta
+merge group year using `temp_time_varying_network'
 tab _merge
 drop _merge 
 $window_of_activity_extended
-qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' i.group,  partial(Dgroup*   `controls3')
+qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' i.group,  partial( i.group  `controls3')
 scalar beta  = abs(_b[ TotFight_Allied])
 scalar gamma = abs(_b[ TotFight_Enemy])
 
@@ -479,7 +467,7 @@ gen GAM=1/(1 + beta * degree_plus_time - gamma * degree_minus_time)
 bysort year: egen AGG_GAM=sum(GAM)
 gen phistar= GAM * (1-(1/AGG_GAM)) * (1/AGG_GAM)
 
-qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  phistar `controls1' `controls3' i.group,  partial(Dgroup*   `controls3')
+qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  phistar `controls1' `controls3' i.group,  partial( i.group   `controls3')
 local prec= 0.5 * (((beta - abs(_b[ TotFight_Allied]))^2 + (gamma - abs(_b[ TotFight_Enemy]))^2)^0.5)
 
 scalar beta  = abs(_b[ TotFight_Allied])
@@ -491,11 +479,25 @@ local step = `step' + 1
  }
 
 *regression:
-eststo: my_spatial_2sls `y' phistar  `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral' 
+my_spatial_2sls_jo `y' phistar  `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral' 
+predict p, xb
+        corr `y' p  
+        estadd scalar r2 = r(rho)^2
+        drop p
+estadd scalar KP = e(KPstat)
+estadd scalar HJ = e(pValueHansen)
+est sto t3_c6
+
 *eststo: ivreg2 `y' (`x' `n'=`iv_full_neutral') phistar  `controls1' `controls3' i.group, $clus first
 
 
-** TOBIT and Poisson with Balanced Panel**
+
+/*----------------------------------------------------*/
+   /* [>   Column 7: 
+   TOBIT and Poisson with Balanced Panel
+    */
+/*----------------------------------------------------*/
+
 use KRTZ_monadic_AF.dta, clear
 /* [> Drop singletons in controls2 <] */
 foreach v of varlist `controls2' {
@@ -513,24 +515,14 @@ reg TotFight_Neutral `iv_full_neutral' `controls1' `controls3' i.group
 predict junk3, residuals
 }
 
+
 *  
-eststo: tobit `y' `x' `n'  junk1 junk2 `controls1' `controls3' i.group,  ll(0) 
-
+tobit `y' `x' `n'  junk1 junk2 `controls1' `controls3' i.group,  ll(0) 
+estadd scalar r2 = e(r2_p)
+estadd local KP = "N/A"
+estadd local HJ = "N/A"
+est sto t3_c7
  
-
-log using ../results/Table3.txt, text replace
-set linesize 150
-esttab, keep(TotFight_Enemy TotFight_Allied TotFight_Neutral) pr2 r2 starlevels(* 0.1 ** 0.05 *** 0.01)  b(%4.3f) se(%4.3f) label scalars(meanprob) nogaps nolines nodepvars
-log close
-eststo clear
-
-cap erase temp_time_varying_network.dta
-cap erase temp_active.dta
-cap erase temp_active_d.dta
-
-
-
-
 
 #delimit ;
 estout 
@@ -551,6 +543,11 @@ nolabel replace collabels(none) mlabels(none)
 note("\bottomrule")
   ; 
 #delimit cr   
+
+cap erase temp_time_varying_network.dta
+cap erase temp_active.dta
+cap erase temp_active_d.dta
+
 
 
 
