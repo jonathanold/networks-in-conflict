@@ -2,10 +2,10 @@
    /* [>   0.  Github integration   <] */ 
 /*----------------------------------------------------*/
 /* [> Commit and push any important changes to github regularly. <] */ 
-/*
+*/*
 cd "${github}"
 ! git add "${github}/replication_code/table3.do"
-! git commit -m "Slightly improved code to replicate table 3 (tempfiles code). Cols 1-3 are complete and understood. Need to understand cols 4-7."
+! git commit -m "T3: Corrected order in which singletons are dropped, now results match up. Need to understand cols 4-6: IILM method (can I do ML instead?). Need to understand Tobit model in col 7."
 ! git push
 */
 
@@ -53,17 +53,11 @@ Column 4:
 
 
 Column 5: 
-        Says this is "unbalanced panel"
-        Defines group activity from nonzero events (first year, last year)
-        Defines omega in activity window as 3
-        Runs standard IV, with neutral groups, and includes activityXgroup dummies
+        Same as column 4, but events defined in activity window with omega=0
 
 
 Column 6: 
-        Says this is "unbalanced panel"
-        Defines group activity from nonzero events (first year, last year)
-        Defines omega in activity window as 3
-        Runs standard IV, with neutral groups, and includes activityXgroup dummies
+        Same as column 5, but events defined in activity window with omega=3
 
 
 Column 7: 
@@ -291,10 +285,7 @@ est sto t3_c3
 /*----------------------------------------------------*/
 
 use KRTZ_monadic_AF.dta, clear
-/* [> Drop singletons in controls2 <] */
-foreach v of varlist `controls2' {
-       drop if `v'==1
-        }
+
 sort id
 
 /* [> Merge with start and end data from FZ <] */ 
@@ -364,6 +355,11 @@ keep if window_activity_expert==1
         corr TotFight_Enemy_TIME TotFight_Enemy
         corr TotFight_Allied_TIME TotFight_Allied
 
+/* [> Drop singletons in controls2 <] */
+foreach v of varlist `controls2' {
+       drop if `v'==1
+        }
+
 qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' Dgroup*  ,  partial(Dgroup*  `controls3')
 scalar beta  = abs(_b[ `y'_Allied])
 scalar gamma = abs(_b[ `y'_Enemy])
@@ -432,10 +428,7 @@ predict residN, resid
 
 * We build a time varying network based on windows of activity
 use KRTZ_monadic_AF.dta, clear
-/* [> Drop singletons in controls2 <] */
-foreach v of varlist `controls2' {
-       drop if `v'==1
-        }
+
 gen nonzero=year if `y'>0
 bysort group: egen startyear= min(nonzero)
 bysort group: egen endyear= max(nonzero)
@@ -489,6 +482,11 @@ keep if ((year > startyear -1) & (year < endyear+1))
         corr TotFight_Enemy_TIME TotFight_Enemy
         corr TotFight_Allied_TIME TotFight_Allied 
 
+
+/* [> Drop singletons in controls2 <] */
+foreach v of varlist `controls2' {
+       drop if `v'==1
+        }
 
 qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' Dgroup*,  partial(Dgroup*   `controls3')
 scalar beta  = abs(_b[ TotFight_Allied])
@@ -596,6 +594,10 @@ keep if ((year > startyear -4) & (year < endyear+4))
         corr TotFight_Enemy_TIME TotFight_Enemy
         corr TotFight_Allied_TIME TotFight_Allied
 
+/* [> Drop singletons in controls2 <] */
+foreach v of varlist `controls2' {
+       drop if `v'==1
+        }
 
 qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' i.group,  partial( i.group  `controls3')
 scalar beta  = abs(_b[ TotFight_Allied])
