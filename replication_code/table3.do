@@ -2,7 +2,7 @@
    /* [>   0.  Github integration   <] */ 
 /*----------------------------------------------------*/
 /* [> Commit and push any important changes to github regularly. <] */ 
-*/*
+/*
 cd "${github}"
 ! git add "${github}/replication_code/table3.do"
 ! git commit -m "Slightly improved code to replicate table 3 (tempfiles code). Cols 1-3 are complete and understood. Need to understand cols 4-7."
@@ -14,6 +14,68 @@ cd "${github}"
 
 cd "${main}/regressions"
  
+
+
+ /*----------------------------------------------------*/
+    /* [>   Description of file   <] */ 
+ /*----------------------------------------------------*/
+
+/*
+Column 1: 
+        Defines group activity from expert coding (FZ)
+        Defines omega in activity window as 0
+        Runs standard IV, with neutral groups, and includes activityXgroup dummies
+
+Column 2: 
+        Defines group activity from nonzero events (first year, last year)
+        Defines omega in activity window as 0
+        Runs standard IV, with neutral groups, and includes activityXgroup dummies
+
+Column 3: 
+        Defines group activity from nonzero events (first year, last year)
+        Defines omega in activity window as 3
+        Runs standard IV, with neutral groups, and includes activityXgroup dummies
+
+Column 4: 
+        Says this is "unbalanced panel"
+        Defines group activity from expert coding (FZ)
+        Keeps only active years with omega=0
+        Generates degree measures by group AND YEAR
+                (Note: In other file, degree is created like this from base file:
+                collapse (sum) allied enemy, by (country group year))
+                ren allied degreepus, etc 
+                Should be time invariant! -- check more in code and also see for network figure
+        In this step, the code merges datasets - it uses an old code, I adjusted it
+        The estimation relies on the number of enemies and allies at a given point in time - but their fighting effort is unchanged. I will see if it changes
+                if we change how TotFightX is being calculated (and make that dependent on the new network). With omega=4, this gives the same thing, with omega=1 and expert coding, correlation is approx. 0.9995
+        ### We also don't include bilateral fighting in the calculation of fiighting efforts
+
+
+
+Column 5: 
+        Says this is "unbalanced panel"
+        Defines group activity from nonzero events (first year, last year)
+        Defines omega in activity window as 3
+        Runs standard IV, with neutral groups, and includes activityXgroup dummies
+
+
+Column 6: 
+        Says this is "unbalanced panel"
+        Defines group activity from nonzero events (first year, last year)
+        Defines omega in activity window as 3
+        Runs standard IV, with neutral groups, and includes activityXgroup dummies
+
+
+Column 7: 
+        Runs Tobit regression (with zero as lower censoring bound for total fighting)
+        Includes residuals from XYZ as controls
+
+
+*/
+
+
+
+
 /*----------------------------------------------------*/
    /* [>   Set locals for analysis   <] */ 
 /*----------------------------------------------------*/
@@ -49,24 +111,21 @@ local ac2_syntax        "latitude(latitude) longitude(longitude) id(group) time(
 
 *globals
 global clus "r cl(id)" 
-global active_window "((year > startyear -1) & (year < endyear+1))"
-global active_window_extended "((year > startyear -4) & (year < endyear+4))"
-global window_of_activity "keep if ${active_window}"
-global window_of_activity_extended "keep if ${active_window_extended}"
 
 * tempfiles
 tempfile temp_active 
 tempfile temp_window
 tempfile temp_time_varying_network
 tempfile temp_active_d 
+tempfile temp_tvn_time 
+
 
 /*----------------------------------------------------*/
    /* [>   Preparation: Generate time-varying data  <] */ 
 /*----------------------------------------------------*/
 
 /* [> Import export data for windows of activity <] */ 
-clear
-import excel using ../original_data/windows_activity_groups_march16_fz.xls, first
+import excel using ../original_data/windows_activity_groups_march16_fz.xls, first clear
 keep id name group_start group_end militia* dummy*
 rename name name_fz
 destring group_start group_end militia*, replace
@@ -220,7 +279,7 @@ est sto t3_c3
 
 
 
-
+*/
 
 ********************
 ** Unbalanced Sample 
@@ -237,6 +296,8 @@ foreach v of varlist `controls2' {
        drop if `v'==1
         }
 sort id
+
+/* [> Merge with start and end data from FZ <] */ 
 merge m:1 id using `temp_window'
 tab _merge
 drop if _merge==2
@@ -248,50 +309,78 @@ gen window_activity_expert=(year > start_fz -1) & (year < end_fz+1)
 sort id year
 
 sort group year
+/* [> Save dataset that has time activity dummy for each group-year <] */ 
 save `temp_time_varying_network', replace 
-*global window_of_activity "keep if year > startyear -1 & year < endyear+1"
 keep if window_activity_expert==1
 keep group year
 sort group year
 gen active=1
+
+/* [> Save group-year-activity dataset <] */ 
 save `temp_active', replace 
 
 rename group group_d
 sort group_d year
 rename active active_d 
+/* [> Save group_d-year-activity dataset: To then generate dataset of active enemities and alliances <] */ 
 save `temp_active_d', replace
+
 
 * Unbalanced panel
 use KRTZ_dyadic_AF, clear
 keep group group_d year allied enemy
 sort group_d year
-merge group_d year using `temp_active_d'
+
+
+/* [> Changed merge command to m:1 <] */ 
+merge m:1 group_d year using `temp_active_d'
+
 tab _merge
 drop _merge 
-keep if active_d==1
+keep if active_d==1 /* [> This throws out unmatched merges <] */ 
 sort  group year  group_d
-collapse (sum) degree_plus_time=allied degree_minus_time=enemy, by( group year)
+
+collapse (sum) degree_plus_time=allied degree_minus_time=enemy, by( group year) // Get number of allies and enemies by time. But what we want is fighting effort of those groups over timne, isn't it?
 sort group year
-merge group year using `temp_time_varying_network'
+
+/* [> Changed merge command to 1:1 <] */ 
+merge 1:1 group year using `temp_time_varying_network'
+drop _merge 
+save `temp_tvn_time', replace 
+
+/* [> Time-varying fighting effort is NOT adjusted by activity 
+        - I am changing the adjustment but the correlation should be extremely strong
+
+         <] */ 
+do  "${code}/auxiliary_code/build_time_varying_fighting_efforts.do" "`temp_active'" "`temp_active_d'"
+use `temp_tvn_time'
+merge 1:1 group year using KRTZ_monadic_base_mt_TIME.dta, keepusing(TotFight_Allied_TIME TotFight_Enemy_TIME TotFight_Neutral_TIME)
+
 tab _merge
 drop _merge 
 keep if window_activity_expert==1
+
+        /* [> Check correlations: They are very strong and so results should not change. <] */ 
+        corr TotFight_Enemy_TIME TotFight_Enemy
+        corr TotFight_Allied_TIME TotFight_Allied
+
 qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' Dgroup*  ,  partial(Dgroup*  `controls3')
 scalar beta  = abs(_b[ `y'_Allied])
 scalar gamma = abs(_b[ `y'_Enemy])
 
 
+/* [> Implement iterated linear least square estimator (Blundell and Robin 1999) <] */ 
 local step =1
 local prec = 1
 
-while `prec' >0.002 & `step'<1000 {
+while `prec' >0.003 & `step'<1000 { // before: step=0.002, in text: 0.0001
 cap drop GAM AGG_GAM phistar
 gen GAM=1/(1 + beta * degree_plus_time - gamma * degree_minus_time) 
 bysort year: egen AGG_GAM=sum(GAM)
 gen phistar= GAM * (1-(1/AGG_GAM)) * (1/AGG_GAM)
 
 qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  phistar  `controls1' `controls3' Dgroup*  ,  partial(Dgroup*   `controls3')
-local prec= 0.5 * (((beta - abs(_b[ `y'_Allied]))^2 + (gamma - abs(_b[ `y'_Enemy]))^2)^0.5)
+local prec= (((beta - abs(_b[ `y'_Allied]))^2 + (gamma - abs(_b[ `y'_Enemy]))^2)^0.5)
 
 scalar beta  = abs(_b[ `y'_Allied])
 scalar gamma = abs(_b[ `y'_Enemy])
@@ -300,6 +389,7 @@ di "Iteration "`step' " with precision " `prec'
 local step = `step' + 1
 
  }
+
 
 *regression:
 my_spatial_2sls_jo `y' phistar  `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral' 
@@ -319,6 +409,8 @@ est sto t3_c4
 
 
 * We check below that 2SLS and Control Functions deliver the same results
+ 
+/* [> To be honest, I don't see where this is checked yet. We would need to do something with the residuals <] */ 
 ivreg2 `y' phistar  `controls1' `controls3' i.group (`x' `n' = `iv_full_neutral'), r
 reg TotFight_Enemy  phistar  `controls1' `controls3' i.group `iv_full_neutral'
 predict residE, resid
@@ -349,9 +441,9 @@ bysort group: egen startyear= min(nonzero)
 bysort group: egen endyear= max(nonzero)
 sort group year
 save `temp_time_varying_network', replace
-*global window_of_activity "keep if year > startyear -1 & year < endyear+1"
-$window_of_activity
-*keep if `y'>0
+
+keep if ((year > startyear -1) & (year < endyear+1))
+
 keep group year
 sort group year
 gen active=1
@@ -364,17 +456,40 @@ save `temp_active_d', replace
 use KRTZ_dyadic_AF, clear
 keep group group_d year allied enemy
 sort group_d year
-merge group_d year using `temp_active_d'
+
+/* [> Changed merge command to m:1 <] */ 
+merge m:1 group_d year using `temp_active_d'
 tab _merge
 drop _merge 
 keep if active_d==1
 sort  group year  group_d
 collapse (sum) degree_plus_time=allied degree_minus_time=enemy, by( group year)
 sort group year
-merge group year using `temp_time_varying_network'
+
+/* [> Changed merge command to 1:1 <] */ 
+merge 1:1 group year using `temp_time_varying_network'
 tab _merge
 drop _merge 
-$window_of_activity
+save `temp_tvn_time', replace 
+
+/* [> Time-varying fighting effort is NOT adjusted by activity 
+        - I am changing the adjustment but the correlation should be extremely strong
+
+         <] */ 
+qui do  "${code}/auxiliary_code/build_time_varying_fighting_efforts.do" "`temp_active'" "`temp_active_d'"
+use `temp_tvn_time'
+merge 1:1 group year using KRTZ_monadic_base_mt_TIME.dta, keepusing(TotFight_Allied_TIME TotFight_Enemy_TIME TotFight_Neutral_TIME)
+
+tab _merge
+drop _merge 
+
+keep if ((year > startyear -1) & (year < endyear+1))
+
+        /* [> Check correlations: They are very strong and so results should not change. <] */ 
+        corr TotFight_Enemy_TIME TotFight_Enemy
+        corr TotFight_Allied_TIME TotFight_Allied 
+
+
 qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' Dgroup*,  partial(Dgroup*   `controls3')
 scalar beta  = abs(_b[ TotFight_Allied])
 scalar gamma = abs(_b[ TotFight_Enemy])
@@ -431,7 +546,7 @@ bysort group: egen endyear= max(nonzero)
 sort group year
 save `temp_time_varying_network', replace
 *global window_of_activity "keep if year > startyear -1 & year < endyear+1"
-$window_of_activity_extended
+keep if ((year > startyear -4) & (year < endyear+4))
 *keep if `y'>0
 keep group year
 sort group year
@@ -441,21 +556,47 @@ rename group group_d
 sort group_d year
 rename active active_d 
 save `temp_active_d', replace 
+
 * Unbalanced panel
 use KRTZ_dyadic_AF, clear
 keep group group_d year allied enemy
 sort group_d year
-merge group_d year using `temp_active_d'
+
+/* [> Changed merge command to m:1 <] */ 
+merge m:1 group_d year using `temp_active_d'
+
 tab _merge
 drop _merge 
 keep if active_d==1
 sort  group year  group_d
 collapse (sum) degree_plus_time=allied degree_minus_time=enemy, by( group year)
 sort group year
-merge group year using `temp_time_varying_network'
+
+/* [> Changed merge command to 1:1 <] */ 
+merge 1:1 group year using `temp_time_varying_network'
 tab _merge
 drop _merge 
-$window_of_activity_extended
+
+save `temp_tvn_time', replace 
+
+/* [> Time-varying fighting effort is NOT adjusted by activity 
+        - I am changing the adjustment but the correlation should be extremely strong
+
+         <] */ 
+qui do  "${code}/auxiliary_code/build_time_varying_fighting_efforts.do" "`temp_active'" "`temp_active_d'"
+use `temp_tvn_time'
+merge 1:1 group year using KRTZ_monadic_base_mt_TIME.dta, keepusing(TotFight_Allied_TIME TotFight_Enemy_TIME TotFight_Neutral_TIME)
+
+tab _merge
+drop _merge 
+
+keep if ((year > startyear -4) & (year < endyear+4))
+
+        /* [> Check correlations: They are very strong and so results should not change. <] */ 
+        corr TotFight_Enemy_TIME TotFight_Enemy
+        corr TotFight_Allied_TIME TotFight_Allied
+
+
 qui ivreg2 `y' (`x' `n' =  `iv_full_neutral')  `controls1' `controls3' i.group,  partial( i.group  `controls3')
 scalar beta  = abs(_b[ TotFight_Allied])
 scalar gamma = abs(_b[ TotFight_Enemy])
