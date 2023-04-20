@@ -1,5 +1,19 @@
+/*----------------------------------------------------*/
+   /* [>   0.  Github integration   <] */ 
+/*----------------------------------------------------*/
+/* [> Commit and push any important changes to github regularly. <] */ 
+*/*
+cd "${github}"
+! git add "${github}/replication_code/table1.do"
+! git commit -m "Added code to check concavity of problem (condition 3 of paper)."
+! git push
+*/
+ /* [> New branch for testing new code <] */
+ // git checkout -b name-of-branch
 
- 
+cd "${main}/regressions"
+
+
 /*----------------------------------------------------*/
    /* [>   Set locals for analysis   <] */ 
 /*----------------------------------------------------*/
@@ -43,11 +57,11 @@ local ac2_syntax        "latitude(latitude) longitude(longitude) id(group) time(
 
 use KRTZ_monadic_AF.dta, clear
 
-/* [> Drop singletons in controls2 <] */ 
+/* [> Drop singletons in controls2 <]  */
 foreach v of varlist `controls2' {
        drop if `v'==1
         }
-
+*/ 
 
 
 my_spatial_2sls_jo `y' `x' `controls1'  `fe2', `mys_syntax'
@@ -61,6 +75,17 @@ estadd local software = "KRTZ"
 estadd local iv = "N/A"
 estadd local KP = "N/A"
 estadd local HJ = "N/A"
+
+    cap drop gammai
+    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+    qui sum gammai
+    estadd scalar ming = r(min)
+    if r(min)<0 {
+        estadd local scond "No"
+    }
+    else if r(min)>0 {
+        estadd local scond "Yes"
+    }
 est sto t1_c1
 
 
@@ -76,8 +101,18 @@ estadd local software = "KRTZ"
 estadd local iv = "Restricted"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
-est sto t1_c2
 
+cap drop gammai
+    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+    qui sum gammai
+    estadd scalar ming = r(min)
+    if r(min)<0 {
+        estadd local scond "No"
+    }
+    else if r(min)>0 {
+        estadd local scond "Yes"
+    }
+est sto t1_c2
 
 
 
@@ -92,6 +127,17 @@ estadd local software = "KRTZ"
 estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
+
+cap drop gammai
+    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+    qui sum gammai
+    estadd scalar ming = r(min)
+    if r(min)<0 {
+        estadd local scond "No"
+    }
+    else if r(min)>0 {
+        estadd local scond "Yes"
+    }
 est sto t1_c3
 
 
@@ -107,6 +153,17 @@ estadd local software = "KRTZ"
 estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
+
+cap drop gammai
+    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+    qui sum gammai
+    estadd scalar ming = r(min)
+    if r(min)<0 {
+        estadd local scond "No"
+    }
+    else if r(min)>0 {
+        estadd local scond "Yes"
+    }
 est sto t1_c4
 
 
@@ -131,6 +188,17 @@ estadd local software = "KRTZ"
 estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
+
+cap drop gammai
+    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+    qui sum gammai
+    estadd scalar ming = r(min)
+    if r(min)<0 {
+        estadd local scond "No"
+    }
+    else if r(min)>0 {
+        estadd local scond "Yes"
+    }
 est sto t1_c5
 
 restore 
@@ -153,6 +221,17 @@ estadd local software = "KRTZ"
 estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
+
+cap drop gammai
+    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+    qui sum gammai
+    estadd scalar ming = r(min)
+    if r(min)<0 {
+        estadd local scond "No"
+    }
+    else if r(min)>0 {
+        estadd local scond "Yes"
+    }
 est sto t1_c6
 
 
@@ -175,6 +254,17 @@ estadd local software = "KRTZ"
 estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
+
+cap drop gammai
+    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+    qui sum gammai
+    estadd scalar ming = r(min)
+    if r(min)<0 {
+        estadd local scond "No"
+    }
+    else if r(min)>0 {
+        estadd local scond "Yes"
+    }
 est sto t1_c7
 
 
@@ -195,6 +285,17 @@ estadd local software = "KRTZ"
 estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
+
+cap drop gammai
+    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+    qui sum gammai
+    estadd scalar ming = r(min)
+    if r(min)<0 {
+        estadd local scond "No"
+    }
+    else if r(min)>0 {
+        estadd local scond "Yes"
+    }
 est sto t1_c8
 
 
@@ -213,9 +314,9 @@ keep(`x' `n')
 order(`x' `n')
         cells(b(star fmt(%9.3f)) se(par)) 
  hlinechar("{hline @1}")
-stats(controls estimator software iv KP HJ N r2   ,
-                fmt(%9.3fc %9.3fc %9.3fc %9.3fc %9.2fc %9.2fc %9.0fc %9.3fc)
-                labels("\midrule \addlinespace Add. Controls" "Estimator" "Software" "Instrum. Var." "Kleibergen-Paap F-stat" "Hansen J" "Observations" "R-squared"))
+stats(controls estimator software iv KP HJ N r2 ming scond  ,
+                fmt(%9.3fc %9.3fc %9.3fc %9.3fc %9.2fc %9.2fc %9.0fc %9.3fc %9.2fc %9.3fc)
+                labels("\midrule \addlinespace Add. Controls" "Estimator" "Software" "Instrum. Var." "Kleibergen-Paap F-stat" "Hansen J (p-value)" "Observations" "R-squared" "\midrule Smallest $\Gamma_i$" "Concavity holds"))}
 starlevels(* 0.1 ** 0.05 *** 0.01) 
 nolabel replace collabels(none) mlabels(none)
 note("\bottomrule")
@@ -309,7 +410,7 @@ order(`x')
  hlinechar("{hline @1}")
 stats(controls estimator software iv KP HJ N r2   ,
                 fmt(%9.3fc %9.3fc %9.3fc %9.3fc %9.3fc %9.3fc %9.0fc %9.3fc)
-                labels("\midrule \addlinespace Add. Controls" "Estimator" "Software" "Instrum. Var." "Kleibergen-Paap F-stat" "Hansen J" "Observations" "R-squared"))
+                labels("\midrule \addlinespace Add. Controls" "Estimator" "Software" "Instrum. Var." "Kleibergen-Paap F-stat" "Hansen J (p-value)" "Observations" "R-squared"))
 starlevels(* 0.1 ** 0.05 *** 0.01) 
 nolabel replace collabels(none) mlabels(none)
 note("\bottomrule")
@@ -400,7 +501,7 @@ order(`x' `n')
  hlinechar("{hline @1}")
 stats(controls estimator software iv KP HJ N r2   ,
                 fmt(%9.3fc %9.3fc %9.3fc %9.3fc %9.3fc %9.3fc %9.0fc %9.3fc)
-                labels("\midrule \addlinespace Add. Controls" "Estimator" "Software" "Instrum. Var." "Kleibergen-Paap F-stat" "Hansen J" "Observations" "R-squared"))
+                labels("\midrule \addlinespace Add. Controls" "Estimator" "Software" "Instrum. Var." "Kleibergen-Paap F-stat" "Hansen J (p-value)" "Observations" "R-squared"))
 starlevels(* 0.1 ** 0.05 *** 0.01) 
 nolabel replace collabels(none) mlabels(none)
 note("\bottomrule")
