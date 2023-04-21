@@ -5,7 +5,7 @@
 /*
 cd "${github}"
 ! git add "${github}/replication_code/table4.do"
-! git commit -m "Added code for table 4."
+! git commit -m "Added code for table 4. (So far no changes)"
 ! git push
 */
 

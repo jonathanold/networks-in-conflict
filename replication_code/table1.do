@@ -2,7 +2,7 @@
    /* [>   0.  Github integration   <] */ 
 /*----------------------------------------------------*/
 /* [> Commit and push any important changes to github regularly. <] */ 
-*/*
+/*
 cd "${github}"
 ! git add "${github}/replication_code/table1.do"
 ! git commit -m "Added code to check concavity of problem (condition 3 of paper)."
@@ -68,25 +68,31 @@ my_spatial_2sls_jo `y' `x' `controls1'  `fe2', `mys_syntax'
         predict p , xb 
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
-estadd local controls = "Reduced"
-estadd local estimator = "OLS"
-estadd local software = "KRTZ"
-estadd local iv = "N/A"
-estadd local KP = "N/A"
-estadd local HJ = "N/A"
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 
-    cap drop gammai
-    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
-    qui sum gammai
-    estadd scalar ming = r(min)
-    if r(min)<0 {
-        estadd local scond "No"
-    }
-    else if r(min)>0 {
-        estadd local scond "Yes"
-    }
+        estadd local controls = "Reduced"
+        estadd local estimator = "OLS"
+        estadd local software = "KRTZ"
+        estadd local iv = "N/A"
+        estadd local KP = "N/A"
+        estadd local HJ = "N/A"
+
 est sto t1_c1
+
+
 
 
 
@@ -94,7 +100,21 @@ my_spatial_2sls_jo `y' `controls1'  `fe2', `mys_syntax_iv'
         predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
+
 estadd local controls = "Reduced"
 estadd local estimator = "IV"
 estadd local software = "KRTZ"
@@ -102,17 +122,10 @@ estadd local iv = "Restricted"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 
-cap drop gammai
-    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
-    qui sum gammai
-    estadd scalar ming = r(min)
-    if r(min)<0 {
-        estadd local scond "No"
-    }
-    else if r(min)>0 {
-        estadd local scond "Yes"
-    }
 est sto t1_c2
+
+
+
 
 
 
@@ -120,7 +133,20 @@ my_spatial_2sls_jo `y' `controls1'  `controls3' `fe2', `mys_syntax_ivfull'
         predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 estadd local controls = "Full"
 estadd local estimator = "IV"
 estadd local software = "KRTZ"
@@ -128,16 +154,6 @@ estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 
-cap drop gammai
-    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
-    qui sum gammai
-    estadd scalar ming = r(min)
-    if r(min)<0 {
-        estadd local scond "No"
-    }
-    else if r(min)>0 {
-        estadd local scond "Yes"
-    }
 est sto t1_c3
 
 
@@ -146,7 +162,20 @@ my_spatial_2sls_jo `y' `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral'
         predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 estadd local controls = "Full"
 estadd local estimator = "IV"
 estadd local software = "KRTZ"
@@ -154,16 +183,6 @@ estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 
-cap drop gammai
-    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
-    qui sum gammai
-    estadd scalar ming = r(min)
-    if r(min)<0 {
-        estadd local scond "No"
-    }
-    else if r(min)>0 {
-        estadd local scond "Yes"
-    }
 est sto t1_c4
 
 
@@ -181,7 +200,20 @@ my_spatial_2sls_jo `y' `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral'
         predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 estadd local controls = "Full"
 estadd local estimator = "IV"
 estadd local software = "KRTZ"
@@ -189,16 +221,6 @@ estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 
-cap drop gammai
-    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
-    qui sum gammai
-    estadd scalar ming = r(min)
-    if r(min)<0 {
-        estadd local scond "No"
-    }
-    else if r(min)>0 {
-        estadd local scond "Yes"
-    }
 est sto t1_c5
 
 restore 
@@ -214,7 +236,20 @@ my_spatial_2sls_jo `y' `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral'
         predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 estadd local controls = "Full"
 estadd local estimator = "IV"
 estadd local software = "KRTZ"
@@ -222,16 +257,6 @@ estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 
-cap drop gammai
-    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
-    qui sum gammai
-    estadd scalar ming = r(min)
-    if r(min)<0 {
-        estadd local scond "No"
-    }
-    else if r(min)>0 {
-        estadd local scond "Yes"
-    }
 est sto t1_c6
 
 
@@ -247,7 +272,20 @@ my_spatial_2sls_jo `y' `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral'
         predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 estadd local controls = "Full"
 estadd local estimator = "IV"
 estadd local software = "KRTZ"
@@ -255,16 +293,6 @@ estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 
-cap drop gammai
-    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
-    qui sum gammai
-    estadd scalar ming = r(min)
-    if r(min)<0 {
-        estadd local scond "No"
-    }
-    else if r(min)>0 {
-        estadd local scond "Yes"
-    }
 est sto t1_c7
 
 
@@ -278,7 +306,21 @@ my_spatial_2sls_jo `y' `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral'
         predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
+
 estadd local controls = "Full"
 estadd local estimator = "IV"
 estadd local software = "KRTZ"
@@ -286,16 +328,6 @@ estadd local iv = "Full"
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 
-cap drop gammai
-    qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
-    qui sum gammai
-    estadd scalar ming = r(min)
-    if r(min)<0 {
-        estadd local scond "No"
-    }
-    else if r(min)>0 {
-        estadd local scond "Yes"
-    }
 est sto t1_c8
 
 
@@ -309,14 +341,14 @@ t1_c1 t1_c2 t1_c3 t1_c4  t1_c5 t1_c6  t1_c7 t1_c8
 using "../replication_outputs/tables/t1.tex" , style(tex) 
 eqlabels(" " " ") 
 wrap varwidth(45) 
-varlabels(TotFight_Enemy "Enemies (TFE)" TotFight_Allied "Allies (TFA)" TotFight_Neutral "Neutra (TFN)")
+varlabels(TotFight_Enemy "Enemies (TFE)" TotFight_Allied "Allies (TFA)" TotFight_Neutral "Neutral (TFN)")
 keep(`x' `n')
 order(`x' `n')
         cells(b(star fmt(%9.3f)) se(par)) 
  hlinechar("{hline @1}")
 stats(controls estimator software iv KP HJ N r2 ming scond  ,
-                fmt(%9.3fc %9.3fc %9.3fc %9.3fc %9.2fc %9.2fc %9.0fc %9.3fc %9.2fc %9.3fc)
-                labels("\midrule \addlinespace Add. Controls" "Estimator" "Software" "Instrum. Var." "Kleibergen-Paap F-stat" "Hansen J (p-value)" "Observations" "R-squared" "\midrule Smallest $\Gamma_i$" "Concavity holds"))}
+                fmt(%9.3fc %9.3fc %9.3fc %9.3fc %9.2fc %9.2fc %9.0fc %9.3fc %9.3fc %9.3fc)
+                labels("\midrule \addlinespace Add. Controls" "Estimator" "Software" "Instrum. Var." "Kleibergen-Paap F-stat" "Hansen J (p-value)" "Observations" "R-squared" "\midrule Share $\Gamma_i<0$" "Concavity holds"))
 starlevels(* 0.1 ** 0.05 *** 0.01) 
 nolabel replace collabels(none) mlabels(none)
 note("\bottomrule")
@@ -324,7 +356,7 @@ note("\bottomrule")
 #delimit cr   
 
 
-
+stop
 
 
 

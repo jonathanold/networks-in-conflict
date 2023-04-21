@@ -2,7 +2,7 @@
    /* [>   0.  Github integration   <] */ 
 /*----------------------------------------------------*/
 /* [> Commit and push any important changes to github regularly. <] */ 
-*/*
+/*
 cd "${github}"
 ! git add "${github}/replication_code/table2.do"
 ! git commit -m "Changed syntax to my syntax with locals for groups of variables."
@@ -88,6 +88,7 @@ estadd scalar KP = `KPstat'
 estadd scalar HJ = `pValueHansen'
 est sto t2_c1
 
+
 my_spatial_2sls_jo TotFight_Allied `iv_reduced' `controls1' TE* Dgroup* if e(sample)==1, end() iv( ) latitude(latitude) longitude(longitude) id(group) time(year) `lag_specif_ols'  
 predict p, xb
         corr `y' p  
@@ -159,10 +160,6 @@ estadd scalar HJ = `pValueHansen'
 est sto t2_c6
 
 drop e
-
-
-// perl -pi -e 's{(\bRain \(t-1\) All\.\s*&\s*)([^\s&]+)\s*&\s*([^\s&]+)\s*&\s*([^\s&]+)(\s*&|\s*\\\\)}
- //          {$1\\textbf{$2} & $3 & \textbf{$4}$5}g'  /Users/jonathanold/Library/CloudStorage/GoogleDrive-jonathan_old@berkeley.edu/My\ Drive/_Berkeley\ Research/Networks\ in\ Conflict/replication_outputs/tables/t2.tex
 
 
 

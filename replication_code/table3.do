@@ -2,7 +2,7 @@
    /* [>   0.  Github integration   <] */ 
 /*----------------------------------------------------*/
 /* [> Commit and push any important changes to github regularly. <] */ 
-*/*
+/*
 cd "${github}"
 ! git add "${github}/replication_code/table3.do"
 ! git commit -m "T3: Corrected order in which singletons are dropped, now results match up. Need to understand cols 4-6: IILM method (can I do ML instead?). Need to understand Tobit model in col 7."

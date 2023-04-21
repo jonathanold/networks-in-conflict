@@ -1,4 +1,4 @@
-   /* [>   0.  Github integration   <] */ 
+/* [>   0.  Github integration   <] */ 
 /*----------------------------------------------------*/
 /*----------------------------------------------------*/
 /* [> Commit and push any important changes to github regularly. <] */ 
@@ -36,7 +36,7 @@ save KRTZ_dyadic_ref, replace
 
 use KRTZ_dyadic_AF.dta, clear
 keep if year==2010
- keep group group_d enemy
+ keep group group_d enemy 
 reshape wide  enemy  , i(group) j(group_d)
 forv i = 1/80 {
    replace enemy`i' = 0 if mi(enemy`i')
@@ -44,6 +44,8 @@ forv i = 1/80 {
 mkmat enemy*, mat(aminus)
 
 save A_minus, replace
+export delim A_minus.csv, replace 
+
 
 use KRTZ_dyadic_AF.dta, clear
 keep if year==2010
@@ -55,16 +57,273 @@ forv i = 1/80 {
 mkmat allied*, mat(aplus)
 
 save A_plus, replace
+export delim A_plus.csv, replace 
+
 
 
 
 use KRTZ_monadic_AF.dta, clear
 
-
 nl (TotFight = 1 / (1+{beta=0.2}*degree_plus-{gamma=-0.2}*degree_minus))
 
+bys group: egen tf = total(TotFight)
 keep if year==2010
-keep group id degree_plus degree_minus TotFight
+keep group id degree_plus degree_minus TotFight tf 
+export delim data_reduced_2010.csv, replace 
+
+
+local beta = 0.01
+local gamma = 0.08
+
+gen gamma = 1/(1+`beta'*degree_plus+`gamma'*degree_minus)
+egen lambda = total(gamma)
+replace lambda = 1-1/(lambda)
+
+mkmat gamma, mat(G)
+matrix define inverse = invsym(I(80) + `beta'*aplus + `gamma'*aminus)
+mat def CVEC2 = inverse * G
+svmat CVEC2, name(CVECx)
+svmat inverse, name(invmat)
+
+gen tf_sim = CVECx*lambda*(1-lambda) // 0.2*degree_plus - 0.2*degree_minus // 
+export delim data_simulated_from_original_network.csv, replace 
+
+preserve 
+keep group invmat*
+export delim invmat.csv, replace 
+
+restore 
+ 
+
+   tempfile c
+            preserve 
+            clear
+            set obs 40000
+            gen b = .
+            gen g = .
+            gen v = .
+            save `c', replace 
+   restore
+
+/* [> Generate minimum distance function <] */
+local a = 0
+forv beta = -0.1(0.01)0.1 {
+      forv gamma = 0.0(0.01)0.3 {
+         local a = `a'+1
+            cap drop GAMMA
+            cap drop LAMBDA
+            cap drop CVEC
+            cap drop CVEC1
+            cap drop evaluate
+           //  local beta = 0.2 
+           //  local gamma = -0.2
+            // Define expected values of Likelihood functions
+            qui gen double GAMMA = 1/(1+`beta'*degree_plus+`gamma'*degree_minus)
+            qui egen LAMBDA = total(GAMMA) // qui bys year: 
+            qui replace LAMBDA = 1-1/LAMBDA
+            // bys year: qui egen n = count(group)
+            mkmat GAMMA, mat(G)           
+            matrix define CVEC2 = invsym(I(80)+`beta'*aplus+`gamma'*aminus) * G
+            svmat CVEC2, name(CVEC)
+            
+            // qui gen prediction= LAMBDA*(1-LAMBDA)*CVEC
+            qui gen evaluate = (tf_sim - CVEC)^2 // LAMBDA*(1-LAMBDA)*
+            qui sum evaluate
+            local value = r(mean)
+            
+            local b=round(`beta',0.001)
+            local g=round(`gamma',0.001)
+            // di "(`b', `g')= `value'"
+            preserve 
+            use `c', clear 
+            qui replace b=`b' if _n==`a'
+            qui replace g=`g' if _n==`a'
+            qui replace v=`value' if _n==`a'
+            save `v', replace 
+            restore
+            matrix drop G CVEC2
+      }
+} 
+
+
+use `c', replace 
+replace v = v*80
+sum v
+
+ gr tw (lpoly v b if v<=1000) (sc v b if v<=1000,  col(%10) jitter()) 
+
+ gr tw (lpoly v g if v<=1000) (sc v g if v<=1000,  col(%10) jitter(1)) 
+
+
+
+stop 
+
+
+
+
+
+
+
+import delim matlab_simulation.csv, clear
+
+ren (v1 v2 v3 v4 v5 v6) (beta gamma fval bhat ghat gmin)
+
+ gen gcorrect = 0
+ replace gcorrect = 1 if ghat>=gamma-0.01 & ghat<=gamma+0.01
+ gen bcorrect=0
+replace bcorrect = 1 if bhat>=beta-0.01 & bhat<=beta+0.01
+
+gen borig = -0.083
+gen borig2 = -0.083
+
+gen gorig =  0.114
+gen gorig2 = 0.114
+
+gr tw  (sc bhat beta  if (bcorrect==0 | gcorrect==0) & bhat<=5 & bhat>=-5 , msymbol(smtriangle) col(gray%10) jitter(1)) ///
+(sc bhat beta if bcorrect==1 & gcorrect==1  , msymbol(smcircle)  col(cranberry%100) ) ///
+(sc borig borig2,  msymbol(X) col(black%100)) ///
+(line beta beta, col(red) sort), ///
+ysc(ra(-5(1)5)) xti("{&beta}") yti("Estimated {&beta}") ///
+legend(order(2 "Correct estimates" 1 "Incorrect estimates" 3 "Main specification from paper"))
+
+bys beta: egen mbc = mean(bcorrect)
+
+gr tw  (sc bhat beta if bhat<=1 & bhat>=-1   , msymbol(smtriangle) col(gray%10) jitter(1)) ///
+(line mbc beta , col(cranberry%100) ) ///
+(sc borig borig2,  msymbol(X) col(black%100)) ///
+(line beta beta, col(red) sort), ///
+ysc(ra(-1(0.2)1)) xti("{&beta}") yti("Estimated {&beta}") ///
+legend(order(2 "Share correct estimates" 1 "Estimated {&beta}" 3 "Main specification from paper"))
+
+
+
+gr tw  (sc beta gamma  if (bcorrect==0 | gcorrect==0)  , msymbol(x) col(gray%10)) ///
+(sc beta gamma if bcorrect==1 & gcorrect==1  , msymbol(smcircle)  col(cranberry%50) ) ///
+(sc borig gorig  , msymbol(X)  col(black%100) ) ///
+, ///
+ysc(ra(-1(0.2)1)) xti("{&gamma}") yti("{&beta}") ///
+legend(order(2 "Correct estimates" 1 "Incorrect estimates" 3 "Main specification from paper"))
+
+
+
+gr tw  (sc ghat gamma  if (gcorrect==0 | bcorrect==0) & ghat<=5 & ghat>=-5 , msymbol(smtriangle) col(gray%10) jitter(1)) ///
+(sc ghat gamma if bcorrect==1 & gcorrect==1  , msymbol(smcircle)  col(cranberry%100) ) ///
+(sc gorig gorig2,  msymbol(X) col(black%100)), ///
+ysc(ra(-5(1)5)) xti("{&gamma}") yti("Estimated {&gamma}") ///
+legend(order(2 "Correct estimates" 1 "Incorrect estimates" 3 "Main specification from paper"))
+
+bys gamma: egen mgc = mean(gcorrect)
+
+gr tw  (sc ghat gamma if ghat<=1 & ghat>=-1   , msymbol(smtriangle) col(gray%10) jitter(1)) ///
+(line mgc gamma , col(cranberry%100) ) ///
+(sc gorig gorig2,  msymbol(X) col(black%100)), ///
+ysc(ra(-1(0.2)1)) xti("{&gamma}") yti("Estimated {&gamma}") ///
+legend(order(2 "Share correct estimates" 1 "Estimated {&gamma}" 3 "Main specification from paper"))
+
+
+
+
+
+
+
+ 
+/*----------------------------------------------------*/
+   /* [>   Local simulation   <] */ 
+/*----------------------------------------------------*/
+
+
+import delim matlab_simulation_loc.csv, clear
+
+ren (v1 v2 v3 v4 v5 v6) (beta gamma fval bhat ghat gmin)
+
+ gen gcorrect = 0
+ replace gcorrect = 1 if ghat>=gamma-0.025 & ghat<=gamma+0.025
+ gen bcorrect=0
+replace bcorrect = 1 if bhat>=beta-0.025 & bhat<=beta+0.025
+
+gen borig = -0.083
+gen borig2 = -0.083
+
+gen gorig =  0.114
+gen gorig2 = 0.114
+
+gr tw  (sc bhat beta  if (bcorrect==0 | gcorrect==0) & bhat<=5 & bhat>=-1 , msymbol(smtriangle) col(gray%10)) ///
+(sc bhat beta if bcorrect==1 & gcorrect==1  , msymbol(smcircle)  col(cranberry%20) ) ///
+(sc borig borig2,  msymbol(X) col(black%100)) ///
+(line beta beta, col(red) sort), ///
+ysc(ra(-0.4(0.1)0.4)) xti("{&beta}") yti("Estimated {&beta}") ///
+legend(order(2 "Correct estimates" 1 "Incorrect estimates" 3 "Main specification from paper"))
+
+cap drop mbc
+bys beta: egen mbc = mean(bcorrect)
+
+gr tw  (sc bhat beta if bhat<=1 & bhat>=-1   , msymbol(smtriangle) col(gray%10) jitter(1)) ///
+(line mbc beta , col(cranberry%100) ) ///
+(sc borig borig2,  msymbol(X) col(black%100)) ///
+(line beta beta, col(red) sort), ///
+ysc(ra(-0.2(0.1)0.4)) xti("{&beta}") yti("Estimated {&beta}") ///
+legend(order(2 "Share correct estimates" 1 "Estimated {&beta}" 3 "Main specification from paper"))
+
+
+gr tw  (sc bhat beta if bhat<=0.2 & bhat>=-0.2   , yaxis(1) msymbol(smtriangle) col(gray%10) ) ///
+(line mbc beta , lwidth(medthick) sort col(cranberry%100)  yaxis(2)) ///
+(line beta beta, lwidth(thick) yaxis(1) col(ebblue%80) sort) ///
+(sc borig borig2,   yaxis(1) msymbol(X) col(black%100)) , ///
+ysc(ra(-0.2(0.1)0.2)) ysc(ra(0(0.1)0.6) axis(2)) ylabel(0(0.1)0.6, axis(2)) xlabel(-0.12(0.01)-0.05)  xti("{&beta}") yti("b = estimated {&beta}", axis(1)) yti("Share correct estimates", axis(2) ) ///
+legend(order( 1 "Estimated {&beta}" 3 "Main specification from paper" 2 "b={&beta}" 4 "Share correct estimates"))
+
+
+
+
+
+gr tw  (sc beta gamma  if (bcorrect==0 | gcorrect==0)  , msymbol(x) col(gray%10)) ///
+(sc beta gamma if bcorrect==1 & gcorrect==1  , msymbol(x)  col(cranberry%50) ) ///
+(sc borig gorig  , msymbol(X)  col(black%100) ) ///
+, ///
+ysc(ra(-0.12(0.02)-0.04)) xti("{&gamma}") yti("{&beta}") ///
+legend(order(2 "Correct estimates" 1 "Incorrect estimates" 3 "Main specification from paper"))
+
+
+
+gr tw  (sc ghat gamma  if (gcorrect==0 | bcorrect==0) & ghat<=0.4 & ghat>=-0.4 , msymbol(smtriangle) col(gray%10)) ///
+(sc ghat gamma if bcorrect==1 & gcorrect==1  , msymbol(smcircle)  col(cranberry%20) ) ///
+(sc gorig gorig2,  msymbol(X) col(black%100)), ///
+ysc(ra(-0.4(1)0.4)) xti("{&gamma}") yti("Estimated {&gamma}") ///
+legend(order(2 "Correct estimates" 1 "Incorrect estimates" 3 "Main specification from paper"))
+
+
+gr tw  (sc ghat gamma  if (gcorrect==0 | bcorrect==0) & ghat<=0.3 & ghat>=-0.2 , msymbol(smcircle) col(gray%10)) ///
+(sc gorig gorig2,  msymbol(X) col(black%100)) ///
+(line gamma gamma, col(red) sort), ///
+ysc(ra(-0.2(0.1)0.3)) xti("{&gamma}") yti("Estimated {&gamma}") ///
+legend(order(2 "Correct estimates" 1 "Incorrect estimates" 3 "Main specification from paper"))
+
+
+
+bys gamma: egen mgc = mean(gcorrect)
+
+
+
+gr tw  (sc ghat gamma if ghat<=0.2 & ghat>=-0.2   , yaxis(1) msymbol(smtriangle) col(gray%10)) ///
+(line mgc gamma , col(cranberry%100)  yaxis(2)) ///
+(line gamma gamma,  yaxis(1) col(ebblue) sort) ///
+(sc gorig gorig2,   yaxis(1) msymbol(X) col(black%100)) , ///
+ysc(ra(-0.2(0.1)0.2)) ysc(ra(0(0.1)0.6) axis(2)) ylabel(0(0.1)0.6, axis(2)) xlabel(0.08(0.01)0.15)  xti("{&gamma}") yti("g = estimated {&gamma}", axis(1)) yti("Share correct estimates", axis(2) ) ///
+legend(order( 1 "Estimated {&gamma}" 3 "Main specification from paper" 2 "g={&gamma}" 4 "Share correct estimates"))
+
+
+
+
+gr tw  (sc ghat gamma if ghat<=1 & ghat>=-1   , msymbol(smtriangle) col(gray%10) jitter(1)) ///
+(line mgc gamma , col(cranberry%100) ) ///
+(sc gorig gorig2,  msymbol(X) col(black%100)), ///
+ysc(ra(-1(0.2)1)) xti("{&gamma}") yti("Estimated {&gamma}") ///
+legend(order(2 "Share correct estimates" 1 "Estimated {&gamma}" 3 "Main specification from paper"))
+
+
+
+
+
 
 
 
@@ -99,6 +358,10 @@ ml maximize , difficult
 est sto full
 
 stop 
+
+
+
+
 
 
 

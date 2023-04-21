@@ -2,14 +2,15 @@
    /* [>   0.  Github integration   <] */ 
 /*----------------------------------------------------*/
 /* [> Commit and push any important changes to github regularly. <] */ 
-/
+/*
 cd "${github}"
 ! git add "${github}/replication_code/table1_comments.do"
-! git commit -m "Added comment about KP-F-statistic (which is slightly different if we drop singletons)."
+! git commit -m "Corrected some code in comments for T1."
 ! git push
 */
  /* [> New branch for testing new code <] */
  // git checkout -b name-of-branch
+cd "${main}/regressions"
 
 
  
@@ -55,6 +56,49 @@ use KRTZ_monadic_AF.dta, clear
 
 
  
+
+
+/*----------------------------------------------------*/
+   /* [>   Comment 1: There can be moderately large differences depending on how one defines fixed effects   <] */ 
+/*----------------------------------------------------*/
+
+xi: my_spatial_2sls_jo `y' `controls1' `controls2' i.group i.year , `mys_syntax_iv'
+my_spatial_2sls_jo `y' `controls1' `controls2' TE* Dgroup*, `mys_syntax_iv'
+
+
+/*
+Some differences also come from the treatment of singletons.
+The controls for specific group-years are not used in FE estimation and should be dropped.
+        [Sidenote: ivreghdfe seems to behave weird also: In some cases, difference whether variable included in absorb or as FE.]
+
+The estimates become very unstable when using year fixed effects:
+*/
+ivreghdfe `y' `controls1'  (`x' `n' = `iv_full_neutral')  , absorb(group `controls3')
+ivreghdfe `y' `controls1'   (`x' `n' = `iv_full_neutral')  , absorb(group year)
+ivreghdfe `y' `controls1' TE*  (`x' `n' = `iv_full_neutral')  , absorb(group year)
+ivreg2 `y' `controls1'  i.group i.year  (`x' `n' = `iv_full_neutral')  
+
+
+/*
+Table 1, Column 5: Reports correctly the OLS estimates, but the text describes that IV was used (and same for replication files.)
+*/
+
+
+ 
+/*----------------------------------------------------*/
+   /* [>   Comment 2:  The paper reports the wrong IV   <] */ 
+/*----------------------------------------------------*/
+/*
+The paper states that:
+        Column 2 replicates the specification of column 1 in a 2SLS setup using the lagged fighting efforts of each group’s set of enemies and allies as excluded instruments. 
+ However, when looking at the official replication files and in my own replication, I find that they use rainfall as instrument.
+
+Nevertheless, the description of column 3 works again.
+
+*/
+
+
+
 /*----------------------------------------------------*/
    /* [>   Comment 3:  The KP-F-Statistic reported in the paper is wrong   <] */ 
 /*----------------------------------------------------*/
@@ -78,46 +122,6 @@ foreach v of varlist `controls2' {
 
 /* [> Command used for repliacation <] */ 
 my_spatial_2sls_jo `y' `controls1' `fe2', `mys_syntax_iv'
-
-
-
-/*----------------------------------------------------*/
-   /* [>   Comment 1: There can be large differences depending on how one defines fixed effects   <] */ 
-/*----------------------------------------------------*/
-
-my_spatial_2sls_jo `y' `controls1' `controls2' i.group i.year , `mys_syntax_iv'
-xi: my_spatial_2sls_jo `y' `controls1' `controls2' TE* Dgroup*, `mys_syntax_iv'
-
-
-
-/*
-Some differences also come from the treatment of singletons.
-The controls for specific group-years are not used in FE estimation and should be dropped.
-        [Sidenote: ivreghdfe seems to behave weird also: In some cases, difference whether variable included in absorb or as FE.]
-
-The estimates become very unstable when using year fixed effects:
-*/
-ivreghdfe `y' `controls1'  (`x' `n' = `iv_full_neutral')  , absorb(group `controls3')
-ivreghdfe `y' `controls1'   (`x' `n' = `iv_full_neutral')  , absorb(group year)
-ivreghdfe `y' `controls1' TE*  (`x' `n' = `iv_full_neutral')  , absorb(group year)
-ivreg2 `y' `controls1'  i.group i.year  (`x' `n' = `iv_full_neutral')  
-
-
-/*
-Table 1, Column 5: Reports correctly the OLS estimates, but the text describes that IV was used (and same for replication files.)
-*/
-
-
- /*
-/*----------------------------------------------------*/
-   /* [>   Comment 2:  The paper reports the wrong IV   <] */ 
-/*----------------------------------------------------*/
-
-The paper states that:
-        Column 2 replicates the specification of column 1 in a 2SLS setup using the lagged fighting efforts of each group’s set of enemies and allies as excluded instruments. 
- However, when looking at the official replication files and in my own replication, I find that they use rainfall as instrument.
-
-Nevertheless, the description of column 3 works again.
 
 
 
