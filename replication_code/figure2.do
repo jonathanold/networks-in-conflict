@@ -1,10 +1,15 @@
 
-use "/Users/jonathanold/Library/CloudStorage/GoogleDrive-jonathan_old@berkeley.edu/My Drive/_Berkeley Research/Networks in Conflict/regressions/KRTZ_dyadic_battles.dta", clear
+use "/Users/jonathanold/Library/CloudStorage/GoogleDrive-jonathan_old@berkeley.edu/My Drive/_Berkeley Research/Networks in Conflict/regressions/KRTZ_dyadic_AF.dta", clear
 keep if year==2000
 gen dir = (enemy==1)
 replace dir=2 if allied==1
 replace dir=0.0000001 if neutral==1
+
+bys group: egen dplus = total(allied)
+bys group: egen dminus = total(enemy)
+
 keep group group_d name name_d dir
+
 
 
 gen namex = substr(name,1,10)
