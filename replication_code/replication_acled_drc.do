@@ -1,9 +1,8 @@
 // Replicate using other conflicts
 
-import delim using "../data_acled/1900-01-01-2023-05-11-Democratic_Republic_of_Congo.csv", clear
+import delim using "../data_acled/2020-04-29-2023-05-12-Democratic_Republic_of_Congo.csv", clear
 
 
-keep if year>=1998 & year<=2010
 
 // People's defence force??? 
 

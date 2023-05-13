@@ -715,3 +715,125 @@ reg bdist gmin
 sc bhat ghat, col(%1) jitter(2) xline(0.083) yline(-0.114)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* [> 8. Simulation with patternsearch, then local <] */ 
+
+import delim "matlab_simulation_1000runsX100t_local_correct.csv", clear
+
+
+
+ren (v1 v2 v3 v4 v5 v6) (beta gamma fval bhat ghat gmin)
+
+ gen gcorrect = 0
+ replace gcorrect = 1 if ghat>=gamma-0.025 & ghat<=gamma+0.025
+ gen bcorrect=0
+replace bcorrect = 1 if bhat>=beta-0.025 & bhat<=beta+0.025
+
+gen borig = 0.114
+gen borig2 = 0.114
+
+gen gorig =  -0.083
+gen gorig2 = -0.083
+
+winsor bhat, p(0.05) gen(bh)
+winsor ghat, p(0.05) gen(gh)
+
+replace bh=. if bhat!=bh 
+replace gh=. if ghat!=gh 
+
+
+
+hist bh , xti("Estimates for {&beta}") ///
+    xlab(0(0.1)0.8) width(0.02) xline(0.114, lwidth(medthick)) fcol(%20)
+graph export  "../replication_outputs/figures/hist_sim_beta.pdf", replace
+
+
+hist gh  , xti("Estimates for {&gamma}")  ///
+    width(0.01) xlab(0.00(0.1)0.3) xline(0.083, lwidth(medthick)) fcol(%20) // start(-0.25)
+graph export  "../replication_outputs/figures/hist_sim_gamma.pdf", replace
+
+
+gen bdist = (beta-bhat)^2
+gen gdist = (gamma-ghat)^2 
+
+reg bdist gmin
+
+sc bhat ghat, col(%1) jitter(2) xline(0.083) yline(0.114)
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* [> 8. Simulation with patternsearch, then local <] */ 
+
+import delim "matlab_simulation_1000runsX100t_local_correct_nlls.csv", clear
+
+
+
+ren (v1 v2 v3 v4 v5 v6 v7 v8 v9 v10) (beta gamma fval a b c bhat ghat bse gse)
+
+ gen gcorrect = 0
+ replace gcorrect = 1 if ghat>=gamma-0.025 & ghat<=gamma+0.025
+ gen bcorrect=0
+replace bcorrect = 1 if bhat>=beta-0.025 & bhat<=beta+0.025
+
+gen borig = 0.114
+gen borig2 = 0.114
+
+gen gorig =  -0.083
+gen gorig2 = -0.083
+
+winsor bhat, p(0.05) gen(bh)
+winsor ghat, p(0.05) gen(gh)
+
+replace bh=. if bhat!=bh 
+replace gh=. if ghat!=gh 
+
+
+
+hist bh , xti("Estimates for {&beta}") ///
+    xlab(0(0.1)0.8) width(0.02) xline(0.114, lwidth(medthick)) fcol(%20)
+graph export  "../replication_outputs/figures/hist_sim_beta_nlls.pdf", replace
+
+
+hist gh  , xti("Estimates for {&gamma}")  ///
+    width(0.01) xlab(0.00(0.1)0.3) xline(0.083, lwidth(medthick)) fcol(%20) // start(-0.25)
+graph export  "../replication_outputs/figures/hist_sim_gamma_nlls.pdf", replace
+
+
+gen bdist = (beta-bhat)^2
+gen gdist = (gamma-ghat)^2 
+
+reg bdist gmin
+
+sc bhat ghat, col(%1) jitter(2) xline(0.083) yline(0.114)
+

@@ -126,6 +126,61 @@ save tf_afghanistan.dta, replace
 
 
 
+/*----------------------------------------------------*/
+   /* [>   Generate total fighting efforts by year   <] */ 
+/*----------------------------------------------------*/
+use afghanistan_matched.dta, replace 
+local nmax = max(`an', `bn')
+forv i=1/`nmax' {
+	foreach n in A B {
+		preserve
+		cap drop if missing(actor`n'`i')
+		if _rc==0 {
+		ren actor`n'`i' idA
+		collapse (sum) one fatalities, by(idA year)
+		ren one one`n'`i'
+		ren fatalities fat`n'`i'
+		tempfile a`n'`i'
+		save `a`n'`i'', replace 
+	}
+	else{
+	}
+		restore
+		}
+	}
+
+use `aA1', replace 
+forv i=1/`nmax' {
+	foreach n in A B {
+		if "`i'`n'"=="A1" {
+			}
+		else {
+		cap merge 1:1 idA using `a`n'`i''
+		cap drop _merge 
+		}
+		}
+	}
+
+
+foreach var of varlist _all {
+	replace `var'=0 if `var'==.
+}
+
+egen tf_events = rowtotal(one*)
+egen tf_fatalities = rowtotal(fat*)
+
+keep idA tf*  year 
+
+
+xtset idA year 
+tsfill, full
+replace tf_events = 0 if missing(tf_events)
+replace tf_fatalities = 0 if missing(tf_fatalities)
+save tf_afghanistan_year.dta, replace 
+
+
+
+
 
 use afghanistan_temp.dta, replace 
 
@@ -387,18 +442,59 @@ replace allied = 0 if neutral==1
 
 ren (actorAX actorBX) (idA idB)
 
-bys idA: egen idBB = rank(idB)
-bys idB: egen idAA = rank(idA)
-gsort idA idB
+
 save afghanistan_dyad.dta, replace 
 
 
  
+
+
+
+/*----------------------------------------------------*/
+   /* [>   Generate dataset of yearly fighting efforts and number of enmities etc.   <] */ 
+/*----------------------------------------------------*/
+use afghanistan_dyad.dta, replace 
+
+collapse (sum)  enemy allied neutral, by(idA )
+
+merge 1:m idA using tf_afghanistan_year.dta
+keep if _merge==3
+drop _merge
+gen degree_minus = enemy 
+gen degree_plus = allied
+
+gsort idA year
+export delim data_afghanistan_year.csv, replace 
+
+collapse (firstnm) year, by(idA) 
+drop year 
+
+tempfile a 
+save `a', replace 
+tempfile b 
+ren idA idB
+save `b', replace 
+
+
+
 /*----------------------------------------------------*/
    /* [>   Make necessary matrices for matlab   <] */ 
 /*----------------------------------------------------*/
 
-use afghanistan_dyad.dta, replace 
+/* [> Note: Some groups get removed ... <] */ 
+use afghanistan_dyad.dta, replace
+drop _merge 
+merge m:1 idA using `a'
+keep if _merge==3 
+drop _merge 
+merge m:1 idB using `b'
+keep if _merge==3 
+drop _merge 
+
+bys idA: egen idBB = rank(idB)
+bys idB: egen idAA = rank(idA)
+gsort idAA idBB
+
 keep idAA idBB enemy 
 unique idAA
 local n=r(sum)
@@ -406,6 +502,7 @@ reshape wide  enemy  , i(idAA) j(idBB)
 forv i = 1/`n' {
    replace enemy`i' = 0 if mi(enemy`i')
 }
+
 mkmat enemy*, mat(aminus)
 
 save A_minus, replace
@@ -414,8 +511,19 @@ export delim A_minus_afghanistan.csv, replace
 
 
 
-
 use afghanistan_dyad.dta, replace 
+drop _merge 
+merge m:1 idA using `a'
+keep if _merge==3 
+drop _merge 
+merge m:1 idB using `b'
+keep if _merge==3 
+drop _merge 
+
+bys idA: egen idBB = rank(idB)
+bys idB: egen idAA = rank(idA)
+gsort idAA idBB
+
 keep idAA idBB allied
 unique idAA
 local n=r(sum)

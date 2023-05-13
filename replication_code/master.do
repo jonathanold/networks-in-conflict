@@ -84,6 +84,8 @@ do "${main}/progs/nw2sls_partial.do"
 /*----------------------------------------------------*/
    /* [>   4.  Run files for replication   <] */ 
 /*----------------------------------------------------*/
+
+
 //  do "${code}/table1.do"
 // do "${code}/table1_comments.do"
 // do "${code}/table2.do"
@@ -95,13 +97,14 @@ do "${main}/progs/nw2sls_partial.do"
  do "${code}/table6.do"
 
 // do "${code}/mle_equilibrium.do"
-
-
-
 /*
 foreach conflict in afghanistan syria myanmar yemen iraq {
     do "${code}/replication_acled_`conflict'.do"
 }
+
+
+
+
 */
 
 
