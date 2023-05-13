@@ -1,9 +1,12 @@
-global  MC_draws = 150 // 1000
+// Figure 4
+// Need to first run table 5!!
 
 use endo_KPresult_foreign, clear
 saveold endo_Foreign_Conditional, replace
 
-/*
+
+global  MC_draws = 100 // 1000
+
 do ../progs/endo_network_Policy_KP.do
 use endo_KeyPlayer_result, clear
 saveold endo_KeyPlayer_result_Conditional, replace
@@ -25,8 +28,6 @@ save tempFig4.dta, replace
 export excel using ../results/TABLE_B14.xls, replace first(varl)
 
 
-*/
-
 
 use tempFig4.dta, clear
 replace Delta_RD=-Delta_RD * 100
@@ -41,15 +42,18 @@ twoway (scatter endo_Delta_RD Delta_RD, mcolor(black) msymbol(none) mlabel(name)
 graph save "../results/FIGURE4_left.gph", replace	
 graph export "../results/FIGURE4_left.pdf", as(pdf) replace 
 
-
 use endo_Foreign_Conditional, clear
 sum Delta_RD if mc_draw!=., d
-twoway (histogram Delta_RD if mc_draw!=., xline(-0.2679, lc(blue)) xline(-0.4133, lc(red)) bin(20) frequency  fcolor(gs8) lcolor(black) lwidth(medthin) lpattern(solid) scheme(s1mono) xscale(range(-0.45 -0.22)) xlabel(#6) yscale(range(0 15)))  , ///
-text( 165 -.225 " exogenous network", color(blue) size(small)) ///
-text( 165 -.48 " endogenous network (median)", color(red) size(small)) ///
+local med_mc = r(p50)
+sum Delta_RD if mc_draw==.
+local med_exo = r(mean)
+twoway (histogram Delta_RD if mc_draw!=., xline(`med_exo', lc(blue)) xline(`med_mc', lc(red)) bin(20) frequency  fcolor(gs8) lcolor(black) lwidth(medthin) lpattern(solid) scheme(s1mono) xscale(range(-0.45 -0.22)) xlabel(#6) yscale(range(0 15)))  , ///
+text( 14 -.315 " exogenous network", color(blue) size(small)) ///
+text( 14 -.49 " endogenous network (median)", color(red) size(small)) ///
 legend (off) ytitle("# MC draws") xtitle("Change in Rent Dissipation (pct)") title("Effect of Removing Foreign Groups with exogenous/endogenous network", size(medium))
 graph save "../results/FIGURE4_right.gph", replace	
 graph export "../results/FIGURE4_right.pdf", as(pdf) replace 
 
 
-graph combine  "../results/FIGURE4_left.gph"   "../results/FIGURE4_right.gph", 
+graph combine  "../results/FIGURE4_left.gph"   "../results/FIGURE4_right.gph", ysize(5) xsize(13) iscale(*1.2)
+graph export "../replication_outputs/figures/fig4.pdf", replace 

@@ -90,6 +90,9 @@ do "${main}/progs/nw2sls_partial.do"
 //  do "${code}/table3.do"
 // do "${code}/table4.do"
  do "${code}/table5.do"
+ do "${code}/fig4.do"
+
+ do "${code}/table6.do"
 
 // do "${code}/mle_equilibrium.do"
 
