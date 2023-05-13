@@ -64,11 +64,13 @@ export delim A_plus.csv, replace
 
 use KRTZ_monadic_AF.dta, clear
 
-nl (TotFight = 1 / (1+{beta=0.2}*degree_plus-{gamma=-0.2}*degree_minus))
 
 bys group: egen tf = total(TotFight)
+keep group id degree_plus degree_minus TotFight tf year
+gsort year group
+export delim data_panel_for_matlab.csv, replace 
+stop
 keep if year==2010
-keep group id degree_plus degree_minus TotFight tf 
 export delim data_reduced_2010.csv, replace 
 
 
@@ -256,13 +258,6 @@ legend(order(2 "Correct estimates" 1 "Incorrect estimates" 3 "Main specification
 
 cap drop mbc
 bys beta: egen mbc = mean(bcorrect)
-
-gr tw  (sc bhat beta if bhat<=1 & bhat>=-1   , msymbol(smtriangle) col(gray%10) jitter(1)) ///
-(line mbc beta , col(cranberry%100) ) ///
-(sc borig borig2,  msymbol(X) col(black%100)) ///
-(line beta beta, col(red) sort), ///
-ysc(ra(-0.2(0.1)0.4)) xti("{&beta}") yti("Estimated {&beta}") ///
-legend(order(2 "Share correct estimates" 1 "Estimated {&beta}" 3 "Main specification from paper"))
 
 
 gr tw  (sc bhat beta if bhat<=0.2 & bhat>=-0.2   , yaxis(1) msymbol(smtriangle) col(gray%10) ) ///

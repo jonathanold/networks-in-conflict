@@ -389,25 +389,9 @@ save KeyPlayer_result, replace
 keep if rank<16
 drop rank_fighting
 
+tempfile main 
+save `main'
 export excel using ../results/KeyPlayer_result.xls, replace first(varl)
-
-
-
-/*
-
-file open fh using "../replication_outputs/tables/t4.tex", replace write
-      loc line1 " (`q') & `lab_`y''  & ``T'_b_`y''``T'_star_`y'' & ``T'qval`q''& ``T'_mean_`y'' & ``T'_N_`y'' "
-      loc line2 " & & (``T'_se_`y'')& &(``T'_sd_`y'')"
-      file write fh "`line1'" "\\" _n
-      file write fh "`line2'" "\\" _n
-   
-   file write fh "& Enumerator FE & \checkmark &  &  &  \\" _n                   
-   file write fh "\bottomrule" _n                     
-   file write fh "\end{tabular}" _n                
-   file write fh "\label{tab:Main_`T'}" _n
-   file close fh
-
-
 
 
 
@@ -423,6 +407,93 @@ file open fh using "../replication_outputs/tables/t4.tex", replace write
 global gamaselect "gen gamma= _b[ TotFight_Enemy] + _se[ TotFight_Enemy]" 
 global betaselect "gen beta= - _b[ TotFight_Allied] + _se[ TotFight_Allied]"
 do ../progs/KeyPlayerAnalysis_plusSD.do
+ren Delta_RD rdplus
+
+tempfile plus 
+save `plus'
 global gamaselect "gen gamma= _b[ TotFight_Enemy] - _se[ TotFight_Enemy]" 
 global betaselect "gen beta= - _b[ TotFight_Allied] - _se[ TotFight_Allied]"
 do ../progs/KeyPlayerAnalysis_minusSD.do
+ren Delta_RD rdminus 
+
+tempfile minus 
+save `minus'
+
+
+use `main'
+merge 1:1 name using `plus'
+keep if _merge==3 
+drop _merge 
+
+merge 1:1 name using `minus'
+keep if _merge==3 
+drop _merge 
+
+gsort rank 
+gen mplus = -rdplus/bench_fighting_share 
+gen mminus = -rdminus/bench_fighting_share 
+
+
+replace name = "RCD-G" if rank==1
+replace name = "RCD-K" if rank==2
+replace name = "Rwanda" if rank==3
+replace name = "LRA" if rank==4
+replace name = "FDLR" if rank==5
+replace name = "Mayi-Mayi" if rank==6
+replace name = "Uganda" if rank==7
+replace name = "CNDP" if rank==8
+replace name = "MLC" if rank==9
+replace name = "UPC" if rank==10
+replace name = "Lendu Ethnic Mil." if rank==11
+replace name = "Mutiny FARDC" if rank==12
+replace name = "Interahamwe" if rank==13
+replace name = "ADF" if rank==14
+replace name = "FRPI" if rank==15
+
+foreach v of varlist Delta_RD rdplus rdminus {
+   replace `v'=-round(`v',0.001)
+}
+
+foreach v of varlist multiplier mplus mminus {
+   replace `v'= round(`v', 0.1)
+}
+
+cap drop drdpm
+gen drdpm = "["+string(rdminus,"%9.3f")+", "+string(rdplus,"%9.3f")+"]"
+
+cap drop mpm
+gen mpm = "["+string(mminus,"%9.1f")+", "+string(mplus,"%9.1f")+"]"
+
+foreach var of varlist bench_fighting_share Delta_RD multiplier {
+   gen `var'x = string(`var', "%9.3f")
+   drop `var'
+   gen `var' = `var'x
+   drop `var'x
+}
+replace multiplier = substr(multiplier,1,3)
+
+label var name "Group"
+label var degree_minus "\# Enmities"
+label var degree_plus   "\# Allies"
+label var bench_fighting_share "Share Fight."
+label var Delta_RD "-\$\Delta \$ RD"
+label var multiplier "Multipl."
+label var drdpm "-\$ \Delta \$ RD (\$ \pm \$ 1SD)"
+label var mpm "Multipl. ( \$ \pm \$ 1SD)"
+
+
+texsave name degree_minus degree_plus bench_fighting_share Delta_RD multiplier drdpm mpm ///
+using  "../replication_outputs/tables/t4a.tex", replace frag autonumber title("Table 4: Welfare effects of removing individual armed groups") ///
+footnote("The computation of the counterfactual equilibrium is based on the baseline point estimates of column 4 in Table I. For each group, we report the number of its enemies and allies (cols. 1–2); the observed share of total fighting involving this group (col. 3); the counterfactual reduction in rent dissipation associated with its removal (col. 4); a multiplier defined as the ratio of col. 4 over col. 3 (col. 5); the reduction in RD and its associated multiplier for a set of parameters equal to the baseline estimates ±1 SD (cols. 6–7).") ///
+varlabels nofix
+
+ filefilter "../replication_outputs/tables/t4a.tex" "../replication_outputs/tables/t4.tex", ///
+   replace  from("caption") to("caption*")
+
+erase "../replication_outputs/tables/t4a.tex"
+
+
+
+
+
+

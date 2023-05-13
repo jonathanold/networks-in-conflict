@@ -70,7 +70,7 @@ my_spatial_2sls_jo `y' `x' `controls1'  `fe2', `mys_syntax'
         estadd scalar r2 = r(rho)^2
         count if !mi(p)
         local xx=r(N)
-        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
         count if gammai<0
         local yy=r(N)
         estadd scalar ming=`yy'/`xx'
@@ -102,7 +102,7 @@ my_spatial_2sls_jo `y' `controls1'  `fe2', `mys_syntax_iv'
         estadd scalar r2 = r(rho)^2
         count if !mi(p)
         local xx=r(N)
-        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
         count if gammai<0
         local yy=r(N)
         estadd scalar ming=`yy'/`xx'
@@ -135,7 +135,7 @@ my_spatial_2sls_jo `y' `controls1'  `controls3' `fe2', `mys_syntax_ivfull'
         estadd scalar r2 = r(rho)^2
         count if !mi(p)
         local xx=r(N)
-        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
         count if gammai<0
         local yy=r(N)
         estadd scalar ming=`yy'/`xx'
@@ -164,7 +164,7 @@ my_spatial_2sls_jo `y' `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral'
         estadd scalar r2 = r(rho)^2
         count if !mi(p)
         local xx=r(N)
-        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
         count if gammai<0
         local yy=r(N)
         estadd scalar ming=`yy'/`xx'
@@ -202,7 +202,7 @@ my_spatial_2sls_jo `y' `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral'
         estadd scalar r2 = r(rho)^2
         count if !mi(p)
         local xx=r(N)
-        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
         count if gammai<0
         local yy=r(N)
         estadd scalar ming=`yy'/`xx'
@@ -238,7 +238,7 @@ my_spatial_2sls_jo `y' `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral'
         estadd scalar r2 = r(rho)^2
         count if !mi(p)
         local xx=r(N)
-        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
         count if gammai<0
         local yy=r(N)
         estadd scalar ming=`yy'/`xx'
@@ -274,7 +274,7 @@ my_spatial_2sls_jo `y' `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral'
         estadd scalar r2 = r(rho)^2
         count if !mi(p)
         local xx=r(N)
-        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
         count if gammai<0
         local yy=r(N)
         estadd scalar ming=`yy'/`xx'
@@ -308,7 +308,7 @@ my_spatial_2sls_jo `y' `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral'
         estadd scalar r2 = r(rho)^2
         count if !mi(p)
         local xx=r(N)
-        qui gen gammai = 1/(1+_b[TotFight_Enemy]*degree_minus+_b[TotFight_Allied]*degree_plus)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
         count if gammai<0
         local yy=r(N)
         estadd scalar ming=`yy'/`xx'
@@ -356,7 +356,6 @@ note("\bottomrule")
 #delimit cr   
 
 
-stop
 
 
 

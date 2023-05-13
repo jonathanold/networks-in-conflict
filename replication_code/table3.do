@@ -103,6 +103,9 @@ local shi_syntax        "lat(latitude) lon(longitude) panelvar(group) timevar(ye
 local ac1_syntax        "latitude(latitude) longitude(longitude) id(group) time(year) spatial lag(1000000) dist(150)"
 local ac2_syntax        "latitude(latitude) longitude(longitude) id(group) time(year) spatial lag(1000000) dist(150)  pfe1(group) pfe2(year) dropsingletons"
 
+global active_window "((year > startyear -1) & (year < endyear+1))"
+global active_window_extended "((year > startyear -4) & (year < endyear+4))"
+
 *globals
 global clus "r cl(id)" 
 
@@ -676,7 +679,7 @@ t3_c1 t3_c2 t3_c3 t3_c4 t3_c5 t3_c6 t3_c7
 using "../replication_outputs/tables/t3.tex" , style(tex) 
 eqlabels(" " " ") 
 wrap varwidth(45) 
-varlabels(TotFight_Enemy "Enemies (TFE)" TotFight_Allied "Allies (TFA)" TotFight_Neutral "Neutra (TFN)")
+varlabels(TotFight_Enemy "Enemies (TFE)" TotFight_Allied "Allies (TFA)" TotFight_Neutral "Neutral (TFN)")
 keep(`x' `n')
 order(`x' `n')
         cells(b(star fmt(%9.3f)) se(par)) 
