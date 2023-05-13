@@ -150,3 +150,56 @@ import delim "matlab_afghanistan.csv", clear
 }
 
 use `x', clear
+
+
+
+
+
+
+
+foreach var of varlist avge avga avgevents dens katz {
+   gen `var'x = string(`var', "%9.2f")
+   drop `var'
+   gen `var' = `var'x
+   drop `var'x
+}
+
+
+
+
+
+foreach var of varlist beta gamma beta_nlls gamma_nlls {
+   gen `var'x = string(`var', "%9.3f")
+   drop `var'
+   gen `var' = `var'x
+   drop `var'x
+}
+
+label var name "Conflict"
+label var n "Network size"
+label var avge "Avg. \# Enemies"
+label var avga "Avg. \# Allies"
+label var avgevents "Avg. \# Events"
+label var dens "Network density"
+label var katz "Avg. K-B Centrality"
+label var beta "$\hat{\beta}_{MD}$"
+label var gamma "$\hat{\gamma}_{MD}$"
+label var beta_nlls "$\hat{\beta}_{NLLS}$"
+label var gamma_nlls "$\hat{\gamma}_{NLLS}$"
+
+
+
+texsave name n avge avga avgevents dens katz beta gamma beta_nlls gamma_nlls ///
+using  "../replication_outputs/tables/desca.tex", replace frag autonumber title("Descriptive network statistics from six conflicts") ///
+footnote("Network density is the average number of links per group. K-B Centrality is Katz-Bonacich Centrality with penalty 0.5. Regression results from minimum distance (MD) and Non-Linear Least Squares (NLLS) estimation.") ///
+varlabels nofix label(tab:desc)
+
+
+
+
+
+
+
+
+
+
