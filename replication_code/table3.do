@@ -172,7 +172,20 @@ my_spatial_2sls_jo `y' ActiveGroup* `controls1' `controls3' Dgroup*  , `mys_synt
 predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 
@@ -225,7 +238,20 @@ my_spatial_2sls_jo `y'  ActiveGroup*  `controls1' `controls3' Dgroup*  if active
 predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 est sto t3_c2
@@ -263,7 +289,20 @@ my_spatial_2sls_jo `y'  ActiveGroup*  `controls1' `controls3' Dgroup*  , `mys_sy
 predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 est sto t3_c3
@@ -395,7 +434,20 @@ my_spatial_2sls_jo `y' phistar  `controls1' `controls3' Dgroup*, `mys_syntax_ivn
 predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 est sto t3_c4
@@ -518,11 +570,23 @@ local step = `step' + 1
 
 *regression
 my_spatial_2sls_jo `y' phistar  `controls1' `controls3' Dgroup*, `mys_syntax_ivneutral' 
-
 predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
 est sto t3_c5
@@ -632,9 +696,23 @@ my_spatial_2sls_jo `y' phistar  `controls1' `controls3' Dgroup*, `mys_syntax_ivn
 predict p, xb
         corr `y' p  
         estadd scalar r2 = r(rho)^2
-        drop p
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 estadd scalar KP = e(KPstat)
 estadd scalar HJ = e(pValueHansen)
+
 est sto t3_c6
 
 *eststo: ivreg2 `y' (`x' `n'=`iv_full_neutral') phistar  `controls1' `controls3' i.group, $clus first
@@ -670,6 +748,21 @@ tobit `y' `x' `n'  junk1 junk2 `controls1' `controls3' i.group,  ll(0)
 estadd scalar r2 = e(r2_p)
 estadd local KP = "N/A"
 estadd local HJ = "N/A"
+predict p, xb
+        count if !mi(p)
+        local xx=r(N)
+        qui gen gammai = 1/(1-_b[TotFight_Enemy]*degree_minus-_b[TotFight_Allied]*degree_plus)
+        count if gammai<0
+        local yy=r(N)
+        estadd scalar ming=`yy'/`xx'
+        qui sum gammai
+            if r(min)<0 {
+                estadd local scond "No"
+            }
+            else if r(min)>0 {
+                estadd local scond "Yes"
+            }
+        drop p gammai
 est sto t3_c7
  
 
@@ -684,9 +777,9 @@ keep(`x' `n')
 order(`x' `n')
         cells(b(star fmt(%9.3f)) se(par)) 
  hlinechar("{hline @1}")
-stats(KP HJ N r2   ,
-                fmt(%9.2fc %9.2fc %9.0fc %9.3fc)
-                labels("\midrule \addlinespace Kleibergen-Paap F-stat" "Hansen J (p-value)" "Observations" "R-squared"))
+stats(KP HJ N r2 ming scond  ,
+                fmt(%9.2fc %9.2fc %9.0fc %9.3fc %9.3fc %9.3fc)
+                labels("\midrule \addlinespace Kleibergen-Paap F-stat" "Hansen J (p-value)" "Observations" "R-squared" "\midrule Share $\Gamma_i<0$" "Concavity holds"))
 starlevels(* 0.1 ** 0.05 *** 0.01) 
 nolabel replace collabels(none) mlabels(none)
 note("\bottomrule")
